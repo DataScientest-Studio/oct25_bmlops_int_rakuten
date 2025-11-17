@@ -1,5 +1,5 @@
 def main():
-    print("Hello from rakuten-phase-1!")
+    print("Hello from recommsystem-rakuten!")
 
 
 if __name__ == "__main__":
