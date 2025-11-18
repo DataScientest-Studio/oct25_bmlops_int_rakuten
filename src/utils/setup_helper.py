@@ -7,17 +7,24 @@ from dotenv import load_dotenv, find_dotenv
 import os
 from pathlib import Path
 import argparse
+from datetime import datetime
+import subprocess
 
 
 def load_env_vars():
     """
     Load environment variables from a .env file if available.
+    Load variables passed as input from shell command. 
     """
     # define parsed arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", choices=["local", "colab"], default="local")
     parser.add_argument("--n_neighbors", type=int, default=5)
     parser.add_argument("--query_pid", type=int, default=None)
+    parser.add_argument("--msg", "-m", choices=["auto", "tmp"], 
+                        default="")
+                        # help="Commit message for git push",
+                        # default=f"Auto-commit: Several minor improvements, no major change ({datetime.now().isoformat(timespec='seconds')}" )
     args = parser.parse_args()
     
     dotenv_path = find_dotenv()
@@ -96,9 +103,11 @@ def setup_mongodb(db_name: str = None, collection_name: str = None, mongo_uri: s
 
     return db, collection
 
+
 def get_latest_training_folder(root):
     dirs = [d for d in root.iterdir() if d.is_dir()]
     if not dirs:
         print("No similarity matrix directories found.")
         return None
     return max(dirs, key=lambda d: d.name)
+
