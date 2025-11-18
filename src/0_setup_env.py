@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import subprocess 
 
-from utils.setup_helper import setup_mongodb, load_env_vars()
+from utils.setup_helper import setup_mongodb, load_env_vars
 
 # select environment + load environment variables from .env file
 ROOT, DATA, VENV, _ = load_env_vars()
