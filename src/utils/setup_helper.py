@@ -1,8 +1,6 @@
 ##
-
 # imports
-from pymongo import MongoClient
-import pandas as pd
+# from pymongo import MongoClient
 from dotenv import load_dotenv, find_dotenv
 import os
 from pathlib import Path
@@ -18,7 +16,7 @@ def load_env_vars():
     """
     # define parsed arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("--env", choices=["local", "colab"], default="local")
+    parser.add_argument("--env", choices=["local", "colab", "dev"], default="local")
     parser.add_argument("--n_neighbors", type=int, default=5)
     parser.add_argument("--query_pid", type=int, default=None)
     parser.add_argument("--msg", "-m", choices=["auto", "tmp"], 
@@ -57,10 +55,19 @@ def load_env_vars():
     return ROOT, DATA, VENV, args
 
 
-def setup_mongodb(db_name: str = None, collection_name: str = None, mongo_uri: str = None):
+def setup_mongodb(db_name: str = None, 
+                  collection_name: str = None, 
+                  mongo_uri: str = None,
+                  verbose=False):
     """
     Connect to MongoDB using either function arguments or environment variables.
     """
+    # lazy imports
+    try:
+        from pymongo import MongoClient
+    except ImportError:
+        raise ImportError("pymongo is not installed.")
+
     # load .env if available
     dotenv_path = find_dotenv()
     if dotenv_path:
@@ -83,25 +90,35 @@ def setup_mongodb(db_name: str = None, collection_name: str = None, mongo_uri: s
     # Connect to MongoDB                  
     client = MongoClient(mongo_uri)
     db = client[db_name]
-    collection = db[collection_name]
 
-    collection.create_index("productid", unique=True)
-    
-    print(f"\n{'='*60}")
-    print(f"--- CHECK 'MongoDB ({db_name} / {collection_name})' ---")
-    print(f"{'='*60}")
-    count = collection.count_documents({})
-    print(f"\nNumber of entries:\t{count}") #, collection.count_documents({}))
+    coll_dict = {}
 
-    if count > 0:
-        print(f"\nExemple document:")
-        doc = collection.find_one()
-        for key, value in doc.items():
-            print(f"{key}:\t{value}")
+    if isinstance(collection_name, list):    
+        for col in collection_name:
+            coll_dict[col] = db[collection_name] #.create_index("productid", unique=True)
     else:
-        print("\nNo entries found in the collection.")
+        coll_dict[collection_name] = db[collection_name] #.create_index("productid", unique=True)
+        # collection
+    
+    if verbose:
+        print(f"{len(db.list_collection_names())} collections in database {db_name}.")
 
-    return db, collection
+        for name, col in coll_dict.items():
+            print(f"\n{'='*60}")
+            print(f"--- CHECK 'MongoDB ({db_name} / {name})' ---")
+            print(f"{'='*60}")
+            count = col.count_documents({})
+            print(f"\nNumber of entries:\t{count}") #, collection.count_documents({}))
+
+            if count > 0:
+                print(f"\nExemple document:")
+                doc = col.find_one()
+                for key, value in doc.items():
+                    print(f"{key}:\t{value}")
+            else:
+                print("\nNo entries found in the collection.")
+
+    return coll_dict
 
 
 def get_latest_training_folder(root):

@@ -3,18 +3,23 @@
 #
 # Suggestions based on recent changes:
 Auto-commit:
- Timestamp: 2025-11-18T09:49:49
+Timestamp: 2025-11-18T10:42:49
  
 Changed files:
-  - .env_ES
-  - Makefile
-  - src/0_repo_push.py
-  - src/0_repo_push.sh
-  - src/0_setup_env.py
-  - src/utils/git_helper.py
-  - src/utils/git_repo_work.py
-  - src/utils/setup_helper.py
+#  - =1.25
+#  - commit_msg.txt
+#  - pyproject.toml
+#  - req_clean.txt
+#  - req_init.txt
+- src/0_init_setup.sh
+- src/0_setup_env.py
+- src/1_ETL.sh
+- src/2_create_embeds.sh
+- src/3_create_SimMat.sh
+- src/4_recommend.sh
+- uv.lock
  
 Detected changes:
-  - General updates
+- Embeddings updated
+- ETL pipeline changed
 

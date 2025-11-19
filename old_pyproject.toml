@@ -4,19 +4,16 @@ version = "0.1.0"
 description = "Content-based recommender system for Rakuten dataset"
 readme = "README.md"
 requires-python = ">=3.10"
-
 dependencies = [
     "beautifulsoup4",
     "simplejson",
     "python-dateutil",
     "pytz",
     "psutil",
-    "pymongo",
-    "dotenv>=0.9.9",
 ]
 
-[project.optional-dependencies]
-heavy = [
+[dependency-groups.heavy]
+dependencies = [
     "numpy>=1.26",
     "scikit-learn>=1.5",
     "scipy>=1.10",
@@ -24,7 +21,9 @@ heavy = [
     "Pillow>=10.0",
     "lxml>=5.0",
 ]
-dev = [
+
+[dependency-groups.dev]
+dependencies = [
     "pytest",
     "matplotlib>=3.7",
     "ipykernel",
@@ -34,21 +33,3 @@ dev = [
     "sympy",
 ]
 
-[dependency-groups]
-heavy = [
-    "numpy>=1.26",
-    "scikit-learn>=1.5",
-    "scipy>=1.10",
-    "faiss-cpu>=1.13",
-    "Pillow>=10.0",
-    "lxml>=5.0",
-]
-dev = [
-    "pytest",
-    "matplotlib>=3.7",
-    "ipykernel",
-    "jedi",
-    "Pygments",
-    "nest-asyncio",
-    "sympy",
-]

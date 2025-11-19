@@ -3,18 +3,17 @@
 import os
 from pathlib import Path
 import subprocess 
+import sys
+from datetime import datetime
 
-from utils.setup_helper import setup_mongodb, load_env_vars
+from utils.setup_helper import load_env_vars
 
 # select environment + load environment variables from .env file
-ROOT, DATA, VENV, _ = load_env_vars()
+ROOT, DATA, VENV, args = load_env_vars()
 
-# start venv
-try:
-    subprocess.run(["source", f"{VENV}/bin/activate"])
-    print("✅ Venv was started successfully")
-except Exception as e:
-    print("❌ Error when activating venv")
+LOGS = ROOT / "logs" 
+LOGFILE = LOGS / "0_setup_env_python.log"
+
 
 # defining paths
 DATA_PATH = ROOT / "data"
@@ -23,6 +22,36 @@ DATA_PATH.mkdir(parents=True, exist_ok=True)
 # repo settings
 URL_REPO = os.getenv("URL_REPO")
 BRANCH = os.getenv("BRANCH") # or "main"
+
+print(f"ℹ️ Using Python interpreter: {sys.executable}")
+
+# Installing packages
+print("\nInstalling required packages...")
+if args.env == "colab":
+    cmd = ["uv", "sync", "--group", "heavy", "--group", "dev"]
+    
+elif args.env == "dev":
+    cmd = ["uv", "sync", "--group", "dev"]
+    
+else:
+    cmd = ["uv", "sync"]
+ 
+with open(LOGFILE, "a") as log:
+    try:
+        subprocess.run(cmd,
+                       cwd=str(ROOT), 
+                        stdout=log, #subprocess.DEVNULL,
+                        stderr=log, #subprocess.DEVNULL,
+                        check=True
+                        )
+    except subprocess.CalledProcessError as e:
+        print(f"❌ [{datetime.now()}] uv sync failed (exit code {e.returncode}).")
+        print("⚠️ Check pyproject.toml dependency groups or conflicting versions.\n")
+        sys.exit(1)
+
+print(f"✅ Packages installed ({args.env}).")
+
+from utils.setup_helper import setup_mongodb
 
 ## clone Git repo (or update existing version)
 if not (ROOT / ".git").exists():
@@ -41,7 +70,7 @@ else:
     subprocess.run(
         ["git", "-C", str(ROOT), "fetch"], 
         stdout=subprocess.DEVNULL, 
-        stderr=subprocess.DEVNULL
+        stderr=subprocess.DEVNULL,
         check=True)
     
     result = subprocess.run(
@@ -53,7 +82,7 @@ else:
         subprocess.run(
             ["git", "-C", str(ROOT), "pull"], 
             stdout=subprocess.DEVNULL, 
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
             check=True)
         
         print("✅ UPDATE successful")
@@ -71,15 +100,8 @@ subprocess.run(
 # print(f"{'='*30}\n--- SHAPE ---\n{'='*30}\n")
 # print(df_good_bad.shape)
 
-print("\nInstalling required packages...")
-subprocess.run(
-    [str(VENV / "bin" / "pip"), "install", "-r", str(ROOT / "requirements.txt")],
-    stdout=subprocess.DEVNULL,
-    stderr=subprocess.DEVNULL,
-    check=True
-)
-
-print("✅ Packages installed.")
 print("\nSetup complete.")
 
-db, collection = setup_mongodb()
+coll_dict = setup_mongodb(verbose=True)
+# db = coll_dict.keys()
+# collection = coll_dict.values()
