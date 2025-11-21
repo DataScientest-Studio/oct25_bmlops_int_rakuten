@@ -33,7 +33,7 @@ df = pd.DataFrame(docs)
 
 if not docs:
     print(f"No documents found in MongoDB.")
-    continue
+    #continue
 
 # prepare df for embedding
 df["text"] = (

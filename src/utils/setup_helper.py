@@ -118,7 +118,7 @@ def setup_mongodb(db_name: str = None,
             else:
                 print("\nNo entries found in the collection.")
 
-    return coll_dict
+    return db, coll_dict
 
 
 def get_latest_training_folder(root):

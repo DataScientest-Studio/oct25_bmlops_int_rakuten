@@ -13,6 +13,8 @@ dependencies = [
     "psutil",
     "pymongo",
     "dotenv>=0.9.9",
+    "pandas>=2.3.3",
+    "tensorflow>=2.20.0",
 ]
 
 [project.optional-dependencies]

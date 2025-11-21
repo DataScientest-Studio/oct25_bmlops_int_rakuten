@@ -90,7 +90,7 @@ def check_products(df_dict, collection):
                                 "upload_time (text)": 1}))
     
     if not docs:
-    print("No documents found in MongoDB.")
+        print("No documents found in MongoDB.")
     exit()
 
     df_db = pd.DataFrame(docs)

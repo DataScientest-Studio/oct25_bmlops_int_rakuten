@@ -35,13 +35,13 @@ for f in f_names:
     print(f"HEAD:\n{df.head(5)}\n")
 
     try:
-        df.to_csv("DATA_LAKE/{f}.csv", index=False)
+        df.to_csv(DATA_LAKE/f"{f}.csv", index=False)
     except Exception as e:
         print(f"⚠️ ERROR -- SAVING DF '{f}': {e}")
     
 # check if futher ETL + preprocessing is needed
-db, collection = setup_mongodb()
-
+db, coll_dict = setup_mongodb()
+collection = coll_dict["products"]
 df_dict = check_products(df_dict, collection)
 
 ## cleaning data (using RegEx + BeautifulSoup)
