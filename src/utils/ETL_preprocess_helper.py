@@ -14,8 +14,10 @@ import unicodedata
 import pandas as pd
 import numpy as np
 from PIL import Image
-from tensorflow.keras.applications import resnet50
+from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 import re
+import gc
 
 ##########################
 # IMAGE FUNCTION
@@ -25,29 +27,44 @@ def extract_product_id(filename):
     match = re.search(r"product_(\d+)", filename)
     return match.group(1) if match else None
 
-
-def get_resnet_embedding(img_path):
-    # load ResNet50 (base_model)
-    base_model = resnet50.ResNet50(weights="imagenet", include_top=False, pooling="avg")
-    preprocess = resnet50.preprocess_input
+base_model = MobileNetV2(weights="imagenet", include_top=False, pooling="avg")
+preprocess = preprocess_input
+def get_mobilenet_embeddings(img_paths, batch_size=16):
+    embeddings = []
+    n = len(img_paths)
     
-    try:
-        # Load and preprocess Image
-        img = Image.open(img_path).convert("RGB")
-        img = img.resize((224, 224))
-        img_array = np.array(img, dtype=np.float32)
-        img_array = np.expand_dims(img_array, axis=0)
-        img_array = preprocess(img_array)
-
-        # calculate Embedding
-        features = base_model.predict(img_array, verbose=0)
-        emb = features[0]
-        emb = emb / np.linalg.norm(emb)  # L2-Normalisierung
-        return emb
-    except Exception as e:
-        print(f"Error at {img_path}: {e}")
-
-
+    for i in range(0, n, batch_size):
+        batch_paths = img_paths[i:i+batch_size]
+        batch_arrays = []
+        
+        for path in batch_paths:
+            try:
+                img = Image.open(path).convert("RGB").resize((224, 224))
+                img_array = np.array(img, dtype=np.float32)
+                batch_arrays.append(img_array)
+            except Exception as e:
+                print(f"Fehler bei {path}: {e}")
+        
+        if not batch_arrays:
+            continue
+        
+        batch_arrays = np.stack(batch_arrays, axis=0)
+        batch_arrays = preprocess(batch_arrays)
+        
+        
+        batch_features = base_model.predict(batch_arrays, verbose=0)
+        
+        
+        batch_features = batch_features / np.linalg.norm(batch_features, axis=1, keepdims=True)
+        
+        embeddings.extend(batch_features)
+        
+        
+        del batch_arrays
+        del batch_features
+        gc.collect()
+    
+    return embeddings
 ##########################
 # TEXT FUNCTION
 #########################

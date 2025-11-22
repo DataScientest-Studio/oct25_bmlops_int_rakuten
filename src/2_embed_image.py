@@ -1,127 +1,123 @@
-##
-# imports 
-from pymongo import UpdateOne
 import tensorflow as tf
 import os
 from pathlib import Path
 from PIL import Image
 import pandas as pd
-import numpy as np
-# from tensorflow.keras.applications import resnet50
 import re
+from pathlib import Path
+import numpy as np
 from tqdm import tqdm
-
+from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+import gc
 from utils.setup_helper import setup_mongodb, load_env_vars
-from utils.ETL_preprocess_helper import get_resnet_embedding
+from utils.ETL_preprocess_helper import get_mobilenet_embeddings
+from pymongo import UpdateOne
+from datetime import datetime
 
-# paths
-ROOT, DATA, VENV = load_env_vars()
+ROOT, DATA, VENV, _ = load_env_vars()
 
 IMAGES = DATA / "unzipped_images" / "images"
 IMAGES.mkdir(parents=True, exist_ok=True)
 
-TEST_IMAGES = IMAGES / "test"
+TEST_IMAGES = IMAGES / "test_image"
 TEST_IMAGES.mkdir(parents=True, exist_ok=True)
 
-# DATA_PROCESSED = DATA / "data_processed"
-# DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
+TRAIN_IMAGES = IMAGES / "train_image"
+TRAIN_IMAGES.mkdir(parents=True, exist_ok=True)
 
-# DATA_LAKE = DATA / "data_lake"
-# DATA_LAKE.mkdir(parents=True, exist_ok=True)
+DATA_PROCESSED = DATA / "data_processed"
+DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
 
-# load metadata_df
-metadata_path = IMAGES / "image_metadata.csv"
-metadata_df = pd.read_csv(metadata_path)
+DATA_LAKE = DATA / "data_lake"
+DATA_LAKE.mkdir(parents=True, exist_ok=True)
 
-# prepare df for embedding
-# df["text"] = (
-#     df["clean_designation"].fillna("").astype(str).str.strip()
-#     + " "
-#     + df["clean_description"].fillna("").astype(str).str.strip()
-#             ).str.strip()
-        
-# print(f"created column 'text' from 'clean_designation' and 'clean_description'. \n")
+metadata_path_train = DATA_LAKE / "metadata_train.csv"
+metadata_df_train = pd.read_csv(metadata_path_train)
 
-# ## using ResNet50 for image embeddings
-# model = SentenceTransformer('all-MiniLM-L6-v2')
-# texts = df["text"].tolist()
+metadata_path_test = DATA_LAKE / "metadata_test.csv"
+metadata_df_test = pd.read_csv(metadata_path_test)
 
-embeddings = []
-batch_size = 256
+base_model = MobileNetV2(weights="imagenet", include_top=False, pooling="avg")
+preprocess = preprocess_input
 
-df2 = metadata_df.copy()
-df2['embedding'] = df2['path'].progress_apply(lambda p: get_resnet_embedding(base_path / p))
+img_paths_train = [DATA / p for p in metadata_df_train['path'].values]
+img_paths_test = [DATA / p for p in metadata_df_test['path'].values]
 
-df_emb = df2[df2['embedding'].notnull()].copy()
-print(f"Calculated Embeddings: {len(df_emb)} / {len(df2)}")
+embeddings_train = []
+for i in tqdm(range(0, len(img_paths_train), 16), desc="Calculate Embeddings"):
+    batch_paths_train = img_paths_train[i:i+16]
+    batch_embeddings_train = get_mobilenet_embeddings(batch_paths_train, batch_size=16)
+    embeddings_train.extend(batch_embeddings_train)
 
-# with Progress() as progress:
-#     task = progress.add_task(f"Start embedding with {len(texts)} texts...", total=len(texts))
-#     for i in range(0, len(texts), batch_size):
-#         batch = texts[i:i+batch_size]
-#         emb = model.encode(batch, convert_to_numpy=True, normalize_embeddings=True)
-#         embeddings.append(emb)
-#         progress.update(task, advance=len(batch))
+valid_idx_train = [i for i, e in enumerate(embeddings_train) if e is not None]
+df_emb_train = metadata_df_train.iloc[valid_idx_train].copy()
+df_emb_train['embedding'] = [embeddings_train[i] for i in valid_idx_train]
 
-# Embedding-Matrix
-embedding_matrix = np.vstack(df_emb['embedding'].values).astype("float32")
+print(f"Calculated Embeddings: {len(df_emb_train)} / {len(metadata_df_train)}")
 
-# embedding_matrix = np.vstack(embeddings) 
-# # alternative???: batch-weise arbeiten + in Liste sammeln
-
-print(f"--> embeddings shape:\t", embedding_matrix.shape)
-
-
-# connect to MongoDB + load data from collection
-db, collection = setup_mongodb()
-
-# cursor = collection.find({}, 
-#                         {"_id": 0, 
-#                         "productid": 1,
-#                         "image_id": 1, 
-#                         # "source": 1
-#                         })
-    
-# docs = list(cursor)
-# df = pd.DataFrame(docs)
-
-# if not docs:
-#     print(f"No documents found in MongoDB.")
-#     continue
-
-#Saving as CSV
-save_dir = base_path / "unzipped_images" / "images"
-
-# Store Embedding as string to ensure CSV-compatibility
-df2['embedding_str'] = df2['embedding'].apply(
+# convert Embeddings into strings 
+df_emb_train['embedding_str'] = df_emb_train['embedding'].apply(
     lambda x: ",".join(map(str, x)) if x is not None else None
 )
 
-# Store Dataframe
-df2.to_csv(save_dir / "df_with_embeddings.csv", index=False)
-print("df_with_embeddings.csv stored.")
+# store DataFrame 
+df_emb_train.to_csv(DATA_PROCESSED / "df_train_with_embeddings.csv", index=False)
+print("df_train_with_embeddings.csv saved.")
 
-# Store Embedding-Matrix
-np.save(save_dir / "embedding_matrix.npy", embedding_matrix)
-print("embedding_matrix.npy stored.")
 
-# try:
-#     df.to_csv(f"{DATA_PROCESSED}/df_embedded.csv", index=False)
-#     print(f"Saved embeddings to {DATA_PROCESSED}/df_text_embed.csv")
-# except Exception as e:
-#     print(f"Error saving 'df_text_embed': {e}")
 
-# save embeddings back to MongoDB
-records = df[["productid", "image_embed"]].to_dict(orient="records")
 
-ops = []
+embeddings_test = []
+for i in tqdm(range(0, len(img_paths_test), 16), desc="Calculate Embeddings"):
+    batch_paths_test = img_paths_test[i:i+16]
+    batch_embeddings_test = get_mobilenet_embeddings(batch_paths_test, batch_size=16)
+    embeddings_test.extend(batch_embeddings_test)
 
-for record in records:
-    ops.append(UpdateOne(
-        {"productid": record["productid"]},
-        {"$set": {"image_embed": record["image_embed"]},
-         "$currentDate": {"lastModified": True }}
-    ))
+valid_idx_test = [i for i, e in enumerate(embeddings_test) if e is not None]
+df_emb_test = metadata_df_test.iloc[valid_idx_test].copy()
+df_emb_test['embedding'] = [embeddings_test[i] for i in valid_idx_test]
+
+print(f"Calculated Embeddings: {len(df_emb_test)} / {len(metadata_df_test)}")
+
+# convert Embeddings into strings 
+df_emb_test['embedding_str'] = df_emb_test['embedding'].apply(
+    lambda x: ",".join(map(str, x)) if x is not None else None
+)
+
+# store DataFrame 
+df_emb_test.to_csv(DATA_PROCESSED / "df_test_with_embeddings.csv", index=False)
+print("df_test_with_embeddings.csv saved.")
+
+
+
+def upload_embeddings(df, collection, embedding_col="embedding_str"):
+    """
+    Upload embeddings to MongoDB.
+    df: DataFrame containing at least 'product_id' and embedding_col
+    collection: pymongo collection
+    embedding_col: column in df to upload ('embedding_str' or 'embedding')
+    """
+    # Erstelle Records für MongoDB
+    records = df[["product_id", embedding_col]].to_dict(orient="records")
+
+    ops = []
+    now = datetime.now()
+
+    for record in records:
+        ops.append(UpdateOne(
+            {"product_id": record["product_id"]},           # Match-Filter
+            {"$set": {embedding_col: record[embedding_col]},
+             "$currentDate": {"lastModified": True}},     # Aktualisiere lastModified
+            upsert=True                                     # Falls Produkt noch nicht existiert
+        ))
     
-results = collection.bulk_write(ops)      # prefer 'bulk_write' for multiple updates (> 85k records)
-print("Modified count:", results.modified_count)
+    if ops:
+        results = collection.bulk_write(ops)
+        print(f"Modified/Inserted count: {results.modified_count + len(results.upserted_ids)}")
+
+db, coll_dict = setup_mongodb()
+collection = coll_dict["products"]  
+
+upload_embeddings(df_emb_train, collection, embedding_col="embedding_str")
+upload_embeddings(df_emb_test, collection, embedding_col="embedding_str")
