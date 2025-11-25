@@ -58,6 +58,7 @@ target/
 
 # DotEnv configuration
 .env
+.env.session
 
 # Database
 *.db
@@ -92,5 +93,5 @@ target/
 
 # files for use in development (recursive search)
 **/*_dev_*
-uv.lock
+**/uv.lock
 **/*_old_*

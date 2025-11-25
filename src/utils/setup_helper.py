@@ -170,25 +170,47 @@ def setup_mongodb(db_name: str = None,
         # collection
     
     if verbose:
-        print(f"{len(db.list_collection_names())} collections in database {db_name}.")
+        mongoDB_check(db, db_name, coll_dict)
+    
+    return db, db_name, coll_dict
 
-        for name, col in coll_dict.items():
-            print(f"\n{'='*60}")
-            print(f"--- CHECK 'MongoDB ({db_name} / {name})' ---")
-            print(f"{'='*60}")
-            count = col.count_documents({})
-            print(f"\nNumber of entries:\t{count}") #, collection.count_documents({}))
+def mongoDB_check(db, db_name, coll_dict):        
+    print(f"{len(db.list_collection_names())} collections in database {db_name}.")
 
-            if count > 0:
-                print(f"\nExemple document:")
-                doc = col.find_one()
-                for key, value in doc.items():
-                    print(f"{key}:\t{value}")
-            else:
-                print("\nNo entries found in the collection.")
+    for name, col in coll_dict.items():
+        print(f"\n{'='*60}")
+        print(f"--- CHECK 'MongoDB ({db_name} / {name})' ---")
+        print(f"{'='*60}")
+        count = col.count_documents({})
+        print(f"\nNumber of entries:\t{count}") #, collection.count_documents({}))
 
-    return db, coll_dict
+        if count > 0:
+            print(f"\nExemple document:")
+            doc = col.find_one()
+            for key, value in doc.items():
+                print(f"{key}:\t{value}")
+        else:
+            print("\nNo entries found in the collection.")
 
+
+def load_collection(coll_name):
+    """
+    Docstring for load_collection
+    
+    :param coll_name: Description
+    """
+    _, _, coll_dict = setup_mongodb()
+    
+    collection = None
+    for key, value in coll_dict.items():
+        if key == coll_name:
+            collection = value
+        
+    if collection:
+        return collection
+    else:
+        print(f"Collection {coll_name} could not be found.")
+        return None
 
 def shorten_path(path, n=3):
     p = Path(path).parts

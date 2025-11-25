@@ -1,12 +1,12 @@
 # imports
-from utils.setup_helper import setup_mongodb
+import utils.setup_helper as sh # import setup_mongodb
 
 
 def main():
     # check MongoDB
     print("Start checking MongoDB")
     try:
-        setup_mongodb(verbose=True)
+        sh.setup_mongodb(verbose=True)
         print("MongoDB check successful.")
 
     except Exception as e:

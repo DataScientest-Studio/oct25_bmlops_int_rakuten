@@ -36,7 +36,7 @@ def main():
     # workflow
     demand = pre_repo_check(ROOT, BRANCH)
     if demand == None:
-        print("Repo cannot be cloned or pulled.")
+        print("--> Repo cannot be cloned or pulled.")
 
     else:
         if demand == "clone":
@@ -74,12 +74,14 @@ def pre_repo_check(root, branch_expected):
         check_tracking(root)
 
         # check status of commits and ahead/behind
-        check_commits(root)
+        check_result = check_commits(root)
+        print("\n✅ PRE-FETCH CHECK COMPLETED")
 
-        print("\n✅ PRE-FETCH CHECK PASSED\n")
-        return "pull"
-
-
+        if check_result:
+            return "pull"
+        else:
+            return None
+        
 
 def show_local_branch(root):
     result = gh.run_git_capture(["branch", "--show-current"], 
@@ -126,6 +128,7 @@ def check_tracking(root):
 
     except Exception as e:
         print(f"❌ Error occured: {e}")
+        return None
 
 def check_commits(root):
     # check for uncommitted changes 
@@ -134,22 +137,30 @@ def check_commits(root):
         print("⚠️  Uncommitted changes detected:")
         print(status)
         print("👉 Commit or stash before pulling.")
+        return None 
         # sys.exit(1)
     else:
         print("[STATUS] No local changes.")
+        
 
     # ahead/behind check
-    ahead_behind = gh.run_git_capture(
-        ["rev-list", "--left-right", "--count", "HEAD...@{u}"],
-        cwd=root
-    ).stdout.strip()
+    try:
+        ahead_behind = gh.run_git_capture(
+            ["rev-list", "--left-right", "--count", "HEAD...@{u}"],
+            cwd=root
+        ).stdout.strip()
 
-    ahead, behind = map(int, ahead_behind.split())
-    print(f"[SYNC] Ahead: {ahead}, Behind: {behind}")
+        ahead, behind = map(int, ahead_behind.split())
+        print(f"[SYNC] Ahead: {ahead}, Behind: {behind}")
 
-    if ahead > 0 and behind > 0:
-        print("🚨 Divergent history detected — cannot pull safely!")
-        sys.exit(1)
+        if ahead > 0 and behind > 0:
+            print("🚨 Divergent history detected — cannot pull safely!")
+            return None 
+            # sys.exit(1)
+
+    except Exception as e:
+        print(f"❌ Error occured: {e}")
+        return None 
 
 
 def clone_repo(branch, repo_url, root):
@@ -167,7 +178,7 @@ def clone_repo(branch, repo_url, root):
 
 def pull_repo(root):
     print("🔄 Pulling latest changes...")
-    gh.git_run(["pull", "--rebase"], cwd=root)  # "-C", str(root), 
+    gh.run_git(["pull", "--rebase"], cwd=root)  # "-C", str(root), 
     print("✅ Repo updated.")
 
 
@@ -175,7 +186,7 @@ def post_repo_check(root):
     print(f"\n{'='*10} POST-FETCH CHECK {'='*10}")   #
     gh.run_git(
         ["ls", "-l", str(root)], cwd=root)
-    print("\n✅ POST-FETCH CHECK COMPLETED\n")
+    print("\n✅ POST-FETCH CHECK COMPLETED")
 
 
 if __name__ == "__main__":
