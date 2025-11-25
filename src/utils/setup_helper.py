@@ -5,34 +5,74 @@ from dotenv import load_dotenv, find_dotenv
 import os
 from pathlib import Path
 import argparse
-from datetime import datetime
-import subprocess
+# from datetime import datetime
+# import subprocess
+import sys
+from utils.settings import session
+
+
+def load_args():
+    """
+    Load variables passed as input from shell command. 
+    """
+    # detect jupyter
+    if "ipykernel" in sys.modules:
+        print("[INFO] Jupyter detected — skipping argparse.")
+        class DummyArgs:
+            env = "core"
+            n_neighbors = 5
+            query_pid = None
+            msg = ""
+
+        args = DummyArgs()
+
+    else:    
+        # define parsed arguments
+        parser = argparse.ArgumentParser()
+        # parser.add_argument("--env", choices=["core", "heavy_+", "dev_+", "all"], default="core")
+        # parser.add_argument("--branch", type=str, default="phase_1_es")
+        parser.add_argument("--db", choices=["mongo_db"], default="mongo_db")
+        parser.add_argument("--preview", type=bool, default=True)
+        parser.add_argument("--neigh", type=int, default=5)
+        parser.add_argument("--qpid", type=int, default=None)
+        parser.add_argument("--msg", "-m", choices=["", "auto", "tmp"], 
+                            default="auto")
+                            # help="Commit message for git push",
+                            # default=f"Auto-commit: Several minor improvements, no major change ({datetime.now().isoformat(timespec='seconds')}" )
+        
+        args, unknown = parser.parse_known_args()
+
+        if unknown:
+            print(f"[INFO] Ignoring unknown CLI arguments: {unknown}")
+    
+    return args
 
 
 def load_env_vars():
     """
     Load environment variables from a .env file if available.
-    Load variables passed as input from shell command. 
     """
-    # define parsed arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--env", choices=["local", "colab", "dev"], default="local")
-    parser.add_argument("--n_neighbors", type=int, default=5)
-    parser.add_argument("--query_pid", type=int, default=None)
-    parser.add_argument("--msg", "-m", choices=["auto", "tmp"], 
-                        default="")
-                        # help="Commit message for git push",
-                        # default=f"Auto-commit: Several minor improvements, no major change ({datetime.now().isoformat(timespec='seconds')}" )
-    args = parser.parse_args()
-    
-    dotenv_path = find_dotenv()
-    if dotenv_path:
-        load_dotenv(dotenv_path)
-    else:
-        print("No .env file found. Please ensure environment variables are set.")
+    env_path = find_dotenv()
+    session_path = find_dotenv(filename=".env.session")
 
+    if env_path:
+        load_dotenv(env_path)
+        print("Variable from .env loaded")
+    
+    if session_path:
+        load_dotenv(session_path)
+        print("Variable from .env.session loaded")
+    
+    # else:
+    #     print("No .env file found. Please ensure environment variables are set.")
+
+def get_paths():        
     # load environment variables
-    if args.env == "colab":
+    env = session.env
+    print(f"Using env: {env}")
+    # print("[DEBUG] LOCAL_ROOT =", os.getenv("LOCAL_ROOT"))
+
+    if env == "heavy":
         # mount with GoogleDrive
         try:
             from google.colab import drive
@@ -52,7 +92,38 @@ def load_env_vars():
         DATA = Path(os.getenv("LOCAL_DATA"))
         VENV = Path(os.getenv("LOCAL_VENV"))
     
-    return ROOT, DATA, VENV, args
+    session.root = ROOT
+    session.data = DATA
+    session.venv = VENV
+    session.save_session()
+
+    print("Paths loaded")
+    # return ROOT, DATA, VENV
+
+
+
+    # # load environment variables
+    # if args.env == "colab":
+    #     # mount with GoogleDrive
+    #     try:
+    #         from google.colab import drive
+    #         drive.mount('/content/drive')
+
+    #     except ImportError:
+    #         # !uv add google.colab
+    #         # from google.colab import drive
+    #         raise RuntimeError("Colab environment required for --env colab")
+
+    #     ROOT = Path(os.getenv("COLAB_ROOT"))
+    #     DATA = Path(os.getenv("COLAB_DATA"))
+    #     VENV = Path(os.getenv("COLAB_VENV"))
+
+    # else:
+    #     ROOT = Path(os.getenv("LOCAL_ROOT")).resolve()
+    #     DATA = Path(os.getenv("LOCAL_DATA"))
+    #     VENV = Path(os.getenv("LOCAL_VENV"))
+    
+    # return ROOT, DATA, VENV, args
 
 
 def setup_mongodb(db_name: str = None, 
@@ -68,10 +139,8 @@ def setup_mongodb(db_name: str = None,
     except ImportError:
         raise ImportError("pymongo is not installed.")
 
-    # load .env if available
-    dotenv_path = find_dotenv()
-    if dotenv_path:
-        load_dotenv(dotenv_path)
+    # load .env und .env.session if available
+    load_env_vars()
 
     # connect to MongoDB
     if db_name is None:
@@ -119,6 +188,11 @@ def setup_mongodb(db_name: str = None,
                 print("\nNo entries found in the collection.")
 
     return db, coll_dict
+
+
+def shorten_path(path, n=3):
+    p = Path(path).parts
+    return "/".join(p[-n:])
 
 
 def get_latest_training_folder(root):

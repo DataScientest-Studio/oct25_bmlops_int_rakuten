@@ -18,6 +18,7 @@ from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 import re
 import gc
+import utils.setup_helper as sh
 
 ##########################
 # IMAGE FUNCTION
@@ -27,9 +28,13 @@ def extract_product_id(filename):
     match = re.search(r"product_(\d+)", filename)
     return match.group(1) if match else None
 
-base_model = MobileNetV2(weights="imagenet", include_top=False, pooling="avg")
-preprocess = preprocess_input
+
 def get_mobilenet_embeddings(img_paths, batch_size=16):
+    base_model = MobileNetV2(weights="imagenet", 
+                             include_top=False, 
+                             pooling="avg")
+    preprocess = preprocess_input
+    
     embeddings = []
     n = len(img_paths)
     
@@ -65,6 +70,7 @@ def get_mobilenet_embeddings(img_paths, batch_size=16):
         gc.collect()
     
     return embeddings
+
 ##########################
 # TEXT FUNCTION
 #########################
@@ -96,11 +102,18 @@ def clean_text(text):
     text = re.sub(r"\s{2,}", " ", text).strip()
 
     # keep only allowed chars
-    text = "".join(ch for ch in text if allowed_pattern.match(ch) or ch.isspace())
+    text = "".join(ch for ch in text 
+                   if allowed_pattern.match(ch) or ch.isspace())
 
     return text
 
-def check_products(df_dict, collection):
+def check_latest_products(df_dict, collection):
+    # # load MongoDB
+    # coll_dict = sh.setup_mongodb()
+
+    # for value in coll_dict.values():
+    #     collection = value
+    
     docs = list(collection.find({}, {"_id": 0,
                                 "productid": 1,
                                 "upload_time (image)": 1,
@@ -108,7 +121,7 @@ def check_products(df_dict, collection):
     
     if not docs:
         print("No documents found in MongoDB.")
-    exit()
+        exit(1)
 
     df_db = pd.DataFrame(docs)
     df_db["upload_time (image)"] = pd.to_datetime(df_db["upload_time (image)"], errors='coerce')
@@ -119,20 +132,23 @@ def check_products(df_dict, collection):
         cutoff = pd.Timestamp.now() - pd.Timedelta(days=30)
         df["timestamp"] = pd.to_datetime(df["timestamp"], errors='coerce')
 
-        old_products = df[df["timestamp"] < cutoff]["productid"].tolist()    
-        updated_image = df[df["timestamp"] < df_db["upload_time (image))"]]["productid"].tolist()    
-        updated_text = df[df["timestamp"] < df_db["upload_time (text)"]]["productid"].tolist()    
+        old_image = df_db[df_db["upload_time (image))"] < cutoff]["productid"].tolist()    
+        old_text = df_db[df_db["upload_time (text))"] < cutoff]["productid"].tolist()    
+
+        outdated_image = df[df["upload_time (image))"] < df_db["upload_time (image))"]]["productid"].tolist()    
+        outdated_text = df[df["upload_time (text))"] < df_db["upload_time (text)"]]["productid"].tolist()    
         
-        need_update = set(old_products + updated_image + updated_text)
+        need_update = set(old_image + old_text + outdated_image + outdated_text)
         if need_update:
-            to_update[df] = list(need_update) 
+            to_update[name] = list(need_update) 
             print(f"Updates needed for '{name}': {len(need_update)} products.")
         else:
             print(f"No updates needed for '{name}'.")
 
+    need_update = {}
     for name, products in to_update.items():
         df = df_dict[f"{name}"]
         df_reduced = df[df["productid"].isin(products)]
-        df_dict[f"{name}"] = df_reduced 
+        need_update[f"{name}"] = df_reduced 
 
-    return df_dict
+    return need_update

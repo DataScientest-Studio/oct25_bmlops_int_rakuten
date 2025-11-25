@@ -1,21 +1,55 @@
 ##
 # imports
 import subprocess
+import sys
 from pathlib import Path
 from datetime import datetime
 
 # ---------------------------------------------------------
 # Helper
 # ---------------------------------------------------------
+
 def run_git(cmd, cwd, silent=False):
-    return subprocess.run(
+    print(f"[GIT CMD] git {' '.join(cmd)}")
+    result = subprocess.run(
         ["git"] + cmd,
         cwd=str(cwd),
-        stdout=(subprocess.PIPE if not silent else subprocess.DEVNULL),
-        stderr=(subprocess.PIPE if not silent else subprocess.DEVNULL),
+        stdout=(sys.stdout if not silent else subprocess.DEVNULL),
+        stderr=(sys.stderr if not silent else subprocess.DEVNULL),
         text=True,
-        check=True
+        check=False, 
+        allow_fail=True      
     )
+
+    output = result.stdout or ""
+
+    if output != "":
+        print(result.stdout)
+    if output != "":
+        print(result.stderr)
+
+    if result.returncode != 0:
+        raise RuntimeError(f"Git command failed with code {result.returncode}")
+
+    return result
+
+def run_git_capture(cmd, cwd=None):
+    print(f"[GIT CMD] git {' '.join(cmd)}")
+    result = subprocess.run(
+        ["git"] + cmd,
+        cwd=str(cwd),
+        text=True,
+        check=True,
+        capture_output=True
+    )
+    output = result.stdout or ""
+    if output != "":
+        print(result.stdout)
+    if output != "":
+        print(result.stderr)
+
+    return result
+
 
 def auto_detect_tags(files):
 
@@ -118,10 +152,10 @@ def commit_auto(repo_path: Path):
         print("ℹ️  Nothing to commit.")
         return None
 
-    msg_file = repo_path / "commit_msg_auto.txt"
-    msg_file.write_text(msg)
+    # msg_file = repo_path / "commit_msg_auto.txt"
+    # msg_file.write_text(msg)
 
-    return run_git(["commit", "-F", str(msg_file)], cwd=repo_path)
+    return run_git(["commit", "-m", msg], cwd=repo_path)
 
 
 # ---------------------------------------------------------

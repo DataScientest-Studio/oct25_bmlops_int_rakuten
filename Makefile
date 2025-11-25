@@ -1,7 +1,7 @@
 ROOT := $(CURDIR)
-ENV ?= local 
-N_NEIGHBORS ?= 5
-MSG ?= auto
+# ENV ?= core 
+# N_NEIGHBORS ?= 5
+# MSG ?= auto
 
 .PHONY: setup_environment etl create_embeds
 

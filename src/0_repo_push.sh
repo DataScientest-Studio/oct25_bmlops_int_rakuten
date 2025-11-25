@@ -18,13 +18,13 @@ LOGFILE="$ROOT/logs/0_repo_push.log"
 
 # define environment mode
 # ENV_MODE="${1:-local}"
-MSG="${3:-tmp}"
+MSG="${1}"
 
 # run setup script and log output
 {
     echo "===== START REPO PUSH [$(date '+%Y-%m-%d %H:%M:%S')] ====" 
 
-    python3 $ROOT/src/0_repo_push.py --msg "$MSG"
+    python3 -u $ROOT/src/0_repo_push.py --msg "$MSG"
 
     echo "===== END REPO PUSH [$(date '+%Y-%m-%d %H:%M:%S')] ===="
     echo ""

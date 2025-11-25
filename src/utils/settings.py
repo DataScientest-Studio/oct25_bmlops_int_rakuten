@@ -2,7 +2,6 @@
 # imports 
 import os
 from pathlib import Path
-import json
 
 class Session:
     def __init__(self):
@@ -19,7 +18,7 @@ class Session:
         file_path = Path(self.root) / ".env.session"
 
         state= {
-        "SESSION_ENV": self.env or "",
+            "SESSION_ENV": self.env or "",
             "SESSION_BRANCH": self.branch or "",
             "SESSION_ROOT": str(self.root or ""),
             "SESSION_DATA": str(self.data or ""),
@@ -31,12 +30,5 @@ class Session:
             for key, value in state.items():
                 f.write(f"{key}={value}\n")
     
-    # export_to_os(self):
-    #     
-    # # def __init__(self):
-    # #     self.inputs = {}
-
-    # def record(self, key, value):
-    #     self.inputs[key] = value
 
 session = Session()
