@@ -17,13 +17,13 @@ LOGFILE="$ROOT/logs/1_etl.log"
 # fi 
 
 # define environment mode
-ENV_MODE="${1:-local}"
+# ENV_MODE="${1:-local}"
 
 # run etl scripts (text + image) and log output
 {
     echo "===== START ETL - TEXT [$(date '+%Y-%m-%d %H:%M:%S')] ====" 
 
-    python3 $ROOT/src/1_etl_text.py --env "$ENV_MODE"
+    python3 $ROOT/src/1_etl_text.py
 
     echo "===== END ETL - TEXT [$(date '+%Y-%m-%d %H:%M:%S')] ===="
     echo ""
@@ -32,7 +32,7 @@ ENV_MODE="${1:-local}"
 {
     echo "===== START ETL - IMAGE [$(date '+%Y-%m-%d %H:%M:%S')] ====" 
 
-    python3 $ROOT/src/1_etl_image.py --env "$ENV_MODE"
+    python3 $ROOT/src/1_etl_image.py
 
     echo "===== END ETL - IMAGE [$(date '+%Y-%m-%d %H:%M:%S')] ===="
     echo ""

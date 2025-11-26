@@ -11,12 +11,14 @@ import pandas as pd
 import numpy as np
 from pymongo import UpdateOne
 
-import utils.ETL_preprocess_helper as eph # import clean_text, check_chars, check_products
-import utils.setup_helper as sh # setup_mongodb, load_env_vars
+import utils.ETL_preprocess_helper as eph 
+import utils.setup_helper as sh 
+import utils.db_helper as dh 
 from utils.settings import session
 
 importlib.reload(eph)
 importlib.reload(sh)
+importlib.reload(dh)
 
 @click.command()
 def main():
@@ -52,7 +54,7 @@ def main():
         print("Files cannot be found. Please check the input.")
         return None
         
-    dfs_to_update = eph.check_latest_products(df_dict)
+    dfs_to_update = eph.check_latest_products(df_dict, "products")
     if not dfs_to_update:
         print("✅ Database is up-to-date")
         return None
@@ -76,7 +78,7 @@ def data_preview(lake, f_names=None):
     if not f_names:
         f_names = ["X_test_update", "X_train_update", "Y_train_CVw08PX"]
 
-    now_etl = datetime.now()
+    now_etl = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     df_dict = {}
     for f in f_names:
         f_path = os.path.join(lake, f"{f}.csv")
@@ -85,13 +87,14 @@ def data_preview(lake, f_names=None):
             df = df.rename(columns={"Unnamed: 0": "id"}) 
             df["now"] = now_etl 
             df_dict[f] = df
-            print(f"\n{'='*30}\n--- EDA RAW DATA '{f}' ---") 
+            sh.log_header("EDA RAW DATA")
+            # print(f"\n{'='*30}\n--- EDA RAW DATA '{f}' ---") 
             print("SHAPE:\t", df.shape)
-            print("INFO\n", df.info())
+            print("INFO\n", sh.info_as_string(df))
             print(f"HEAD:\n{df.head(5)}\n")
 
         except Exception as e:
-            print(f"⚠️ Loading {f}: Error occured:\{e}")
+            print(f"⚠️ Loading {f}: Error occured:\n{e}")
 
     return df_dict if len(df_dict) > 0 else None
 
@@ -116,9 +119,10 @@ def merge_dfs(dfs, names=None):
 
         for name, df in zip(names,
                         [df_train, df_test]): 
-            print(f"\n{'='*30}\n--- CHECK MERGED DF ('{name}') ---") 
+            sh.log_header(f"CHECK MERGED DF ('{name}')")
+            # print(f"\n{'='*30}\n--- CHECK MERGED DF ('{name}') ---") 
             print("SHAPE:\t", df.shape)
-            print("INFO:\n", df.info())
+            print("INFO\n", sh.info_as_string(df))
             print(f"HEAD:\n{df.head(5)}\n")
         
         return [df_train, df_test]
@@ -137,10 +141,10 @@ def upload_data_mongoDB(dfs, names=None, coll_name="product"):
     :param coll_name: Description
     """
     # load MongoDB collection
-    collection = sh.load_collection(coll_name)
+    collection = dh.load_collection(coll_name)
 
     # loading data into MongoDB
-    now_db = datetime.now()
+    now_db = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     allowed_cols = ['id', 'prdtypecode', 
                     'designation', 'clean_designation',

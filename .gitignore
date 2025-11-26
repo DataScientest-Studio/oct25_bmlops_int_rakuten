@@ -58,7 +58,6 @@ target/
 
 # DotEnv configuration
 .env
-.env.session
 
 # Database
 *.db
@@ -95,3 +94,5 @@ target/
 **/*_dev_*
 **/uv.lock
 **/*_old_*
+**/.env.session
+**/*.ipynb

@@ -14,11 +14,15 @@ import unicodedata
 import pandas as pd
 import numpy as np
 from PIL import Image
-from tensorflow.keras.applications import MobileNetV2
-from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+# from tensorflow.keras.applications import MobileNetV2
+# from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 import re
 import gc
+
 import utils.setup_helper as sh
+import utils.db_helper as dh
+from utils.settings import session
+
 
 ##########################
 # IMAGE FUNCTION
@@ -107,30 +111,42 @@ def clean_text(text):
 
     return text
 
-def check_latest_products(df_dict):
+def check_latest_products(df_dict, coll_name):
     # load MongoDB
-    coll_dict = sh.setup_mongodb()
+    _, _, coll_dict = dh.setup_mongodb()
     
+    collection = None
     for key, value in coll_dict.items():
-        if key == "products":
+        if key == coll_name:
             collection = value
     
     cols_needed = ["productid",
                    "upload_time (image)",
                    "upload_time (text)"]
     
-    df_db = load_cursor(collection, cols_needed)
+    if collection is None:
+        print(f"⚠️ No collection '{coll_name}' found in db")
+        return None
 
-    df_db["upload_time (image)"] = pd.to_datetime(df_db["upload_time (image)"], errors='coerce')
-    df_db["upload_time (text)"] = pd.to_datetime(df_db["upload_time (text)"], errors='coerce')
+    df_db = dh.load_cursor(collection, cols_needed)
+
+    time_cols = ["upload_time (image)", "upload_time (text)"]
+
+    for col in df_db.columns:
+        if col in time_cols:
+            df_db[col] = pd.to_datetime(df_db[col], errors='coerce')
 
     to_update = {}
     for name, df in df_dict.items():
         cutoff = pd.Timestamp.now() - pd.Timedelta(days=30)
-        df["now"] = pd.to_datetime(df["timestamp"], errors='coerce')
+        df["now"] = pd.to_datetime(df["now"], errors='coerce')
 
-        old_image = df_db[df_db["upload_time (image))"] < cutoff]["productid"].tolist()    
-        old_text = df_db[df_db["upload_time (text))"] < cutoff]["productid"].tolist()    
+        old_image = []
+        old_text = []
+        if "upload_time (image)" in df.columns:
+            old_image = df_db[df_db["upload_time (image))"] < cutoff]["productid"].tolist()    
+        if "upload_time (text)" in df.columns:
+            old_text = df_db[df_db["upload_time (text))"] < cutoff]["productid"].tolist()    
 
         # outdated_image = df[df["upload_time (image))"] < df_db["upload_time (image))"]]["productid"].tolist()    
         # outdated_text = df[df["upload_time (text))"] < df_db["upload_time (text)"]]["productid"].tolist()    
@@ -152,19 +168,3 @@ def check_latest_products(df_dict):
 
     return need_update
 
-
-def load_cursor(collection, cols_needed):
-    pattern = {{}, 
-               {"id": 1}} 
-    
-    for col in cols_needed:
-        pattern[col] = 1
-
-    cursor = collection.find(pattern) 
-    docs = list(cursor)
-
-    if not docs:
-        print(f"No documents found in MongoDB.")
-        return None 
-
-    return pd.DataFrame(docs)

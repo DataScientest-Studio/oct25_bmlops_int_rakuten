@@ -1,42 +1,45 @@
 ##
 # imports 
+import importlib
+import os
 import pandas as pd 
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer
 import numpy as np
 from rich.progress import Progress
 from pymongo import UpdateOne
+from datetime import datetime  
 
-import utils.setup_helper as sh # import setup_mongodb # , load_env_vars
+import utils.setup_helper as sh 
+import utils.db_helper as dh 
+from utils.settings import session
+
+importlib.reload(sh)
+importlib.reload(dh)
+
 
 def main():
-    # paths
-    # ROOT, DATA, VENV = load_env_vars()
+    # load env variables from .env and .env.session
+    sh.load_env_vars()
 
-    # DATA_PROCESSED = DATA / "data_processed"
-    # DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
+    # load paths
+    sh.get_paths()
+    DATA = session.data
 
-    # DATA_LAKE = DATA / "data_lake"
-    # DATA_LAKE.mkdir(parents=True, exist_ok=True)
+    DATA_PROCESSED = DATA / "processed"
+    DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
+
+    DATA_LAKE = DATA / "data_lake"
+    DATA_LAKE.mkdir(parents=True, exist_ok=True)
 
     # load collection from MongoDB + load data from collection
-    collection = sh.load_collection()
+    collection = dh.load_collection("products")
 
     cols_needed = ["clean_designation", "clean_description",
                       "productid"]
 
-    # {}, 
-    #                         {"_id": 0, 
-    #                         "clean_designation": 1, 
-    #                         "clean_description": 1,
-    #                         "productid": 1,
-    #                         # "source": 1
-    #                         })
-        
-    
-    
     # workflow
-    df = eph.load_cursor(collection, cols_needed)
-    if not df:
+    df = dh.load_cursor(collection, cols_needed)
+    if df is None:
         return None
     
     df_prep = prepare_embed(df)
@@ -44,8 +47,8 @@ def main():
     upload_embeds(df_emb, collection)
 
 
-
 def prepare_embed(df_in):
+    print("Start preparing df for embeddings")
     df = df_in.copy()
 
     # prepare df for embedding
@@ -55,11 +58,15 @@ def prepare_embed(df_in):
         + df["clean_description"].fillna("").astype(str).str.strip()
                 ).str.strip()
             
-    print(f"created column 'text' from 'clean_designation' and 'clean_description'. \n")
+    print("created column 'text' from 'clean_designation' and 'clean_description'.")
     return df
 
 
 def embed_text(df_in):
+    print("Start creating embeddings from 'text'")
+    # path = os.path.join(df_in, "df_test_embedded.csv")
+    # df_pre = pd.read_csv(path)
+    # df = df_pre.head(10).copy()
     df = df_in.copy()
     
     ## using SBERT for text embeddings
@@ -79,33 +86,31 @@ def embed_text(df_in):
 
     embeddings = np.vstack(embeddings)
 
-    print(f"--> embeddings shape:\t", embeddings.shape)
+    print(f"Finished creating embeddings\n--> embeddings shape:\t", embeddings.shape)
 
     df["text_embed"] = list(embeddings)
 
     return df
 
-    # try:
-    #     df.to_csv(f"{DATA_PROCESSED}/df_embedded.csv", index=False)
-    #     print(f"Saved embeddings to {DATA_PROCESSED}/df_text_embed.csv")
-    # except Exception as e:
-    #     print(f"Error saving 'df_text_embed': {e}")
-
-    # save embeddings back to MongoDB
     
 def upload_embeds(df, collection):
-    records = df[["productid", "text_embed"]].to_dict(orient="records")
+    print("Starting upload of 'text_embed'")
+    records = df[["productid", "embed_text"]].to_dict(orient="records")
     ops = []
+
+    now_emb = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     for record in records:
         ops.append(UpdateOne(
             {"productid": record["productid"]},
-            {"$set": {"text_embed": record["text_embed"]},
+            {"$set": {"text_embed": record["embed_text"],
+                      "upload_time (image)": now_emb},
             "$currentDate": {"lastModified": True }}
         ))
         
     results = collection.bulk_write(ops)      # prefer 'bulk_write' for multiple updates (> 85k records)
-    print("Modified count:", results.modified_count)
+    print("Finished upload of 'text_embed'")
+    print(f"Modified count:\t{results.modified_count} entries")
 
 
 

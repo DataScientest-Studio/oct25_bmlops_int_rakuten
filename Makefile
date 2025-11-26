@@ -6,13 +6,13 @@ ROOT := $(CURDIR)
 .PHONY: setup_environment etl create_embeds
 
 setup_env:
-	bash ${ROOT}/src/0_init_setup.sh ${ENV}
+	bash ${ROOT}/src/0_init_setup.sh
 
 repo_push:
-	bash ${ROOT}/src/0_repo_push.sh ${MSG}
+	bash ${ROOT}/src/0_repo_push.sh 
 
 etl:
-	bash ${ROOT}/src/1_ETL.sh ${ENV}
+	bash ${ROOT}/src/1_ETL.sh
 
 create_embeds:
 	bash ${ROOT}/src/2_create_embeds.sh 

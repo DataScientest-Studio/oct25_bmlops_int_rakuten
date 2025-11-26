@@ -1,17 +1,29 @@
 import zipfile
-from pathlib import Path
 from PIL import Image
 import pandas as pd
-import re
 import os
 from datetime import datetime
 from pymongo import UpdateOne
 
-from utils.ETL_preprocess_helper import extract_product_id, check_products
-from utils.setup_helper import setup_mongodb, load_env_vars
+from utils.settings import session
+from utils.ETL_preprocess_helper import extract_product_id
+from utils.setup_helper import load_env_vars, get_paths
+from utils.db_helper import setup_mongodb
 
+load_env_vars()
 
-ROOT, DATA, VENV, _ = load_env_vars()
+try:
+    # if not :
+    get_paths
+
+    ROOT = session.root
+    DATA = session.data
+    VENV = session.venv
+
+except Exception:
+    ROOT = os.getenv("ROOT")
+    DATA = os.getenv("DATA")
+    VENV = os.getenv("VENV")
 
 ############################################## Unzipp images###############################################
 zip_path = DATA / "images.zip"
@@ -71,6 +83,7 @@ df_train = extract_metadata(TRAIN_IMAGES, "metadata_train.csv")
 db, coll_dict = setup_mongodb()
 collection = coll_dict["products"]
 now = datetime.now()
+
 def upload_df_to_mongo(df, source_name):
     ops = []
     for _, row in df.iterrows():
