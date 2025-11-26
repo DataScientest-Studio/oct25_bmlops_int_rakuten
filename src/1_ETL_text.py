@@ -146,7 +146,7 @@ def upload_data_mongoDB(dfs, names=None, coll_name="product"):
     # loading data into MongoDB
     now_db = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    allowed_cols = ['id', 'prdtypecode', 
+    allowed_cols = ['_id', 'prdtypecode', 
                     'designation', 'clean_designation',
                     'description', 'clean_description',
                     'productid', 'imageid',
@@ -173,7 +173,7 @@ def upload_data_mongoDB(dfs, names=None, coll_name="product"):
                             upsert=True
                             ))
 
-            collection.bulk_write(records)
+            collection.bulk_write(records, ordered=False)
             # records = data.to_dict(orient="records")
             # collection.insert_many(records)
             print(f"Inserted {len(records)} records from '{name}'.\n\t--> cols: {cols}\n")

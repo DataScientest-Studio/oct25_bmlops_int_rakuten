@@ -32,19 +32,18 @@ def main():
     DATA_LAKE.mkdir(parents=True, exist_ok=True)
 
     # load collection from MongoDB + load data from collection
-    collection = dh.load_collection("products")
-
+    coll_name = "products"
     cols_needed = ["clean_designation", "clean_description",
                       "productid"]
 
     # workflow
-    df = dh.load_cursor(collection, cols_needed)
+    df = dh.load_cursor(coll_name, cols_needed)
     if df is None:
         return None
     
     df_prep = prepare_embed(df)
     df_emb = embed_text(df_prep)
-    upload_embeds(df_emb, collection)
+    upload_embeds(df_emb, coll_name)
 
 
 def prepare_embed(df_in):
@@ -93,7 +92,7 @@ def embed_text(df_in):
     return df
 
     
-def upload_embeds(df, collection):
+def upload_embeds(df, coll_name):
     print("Starting upload of 'text_embed'")
     records = df[["productid", "embed_text"]].to_dict(orient="records")
     ops = []
@@ -107,8 +106,9 @@ def upload_embeds(df, collection):
                       "upload_time (image)": now_emb},
             "$currentDate": {"lastModified": True }}
         ))
-        
-    results = collection.bulk_write(ops)      # prefer 'bulk_write' for multiple updates (> 85k records)
+    
+    collection = dh.load_collection(coll_name)
+    results = collection.bulk_write(ops, ordered=False)      # prefer 'bulk_write' for multiple updates (> 85k records)
     print("Finished upload of 'text_embed'")
     print(f"Modified count:\t{results.modified_count} entries")
 

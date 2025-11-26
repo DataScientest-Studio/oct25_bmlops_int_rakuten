@@ -8,7 +8,12 @@ import utils.setup_helper as sh
 
 
 # 
-def load_cursor(collection, cols_needed):
+def load_cursor(coll_name, cols_needed):
+    
+    collection = load_collection(coll_name)
+    if collection is None:
+        return None
+    
     projection = {"_id": 0} 
     
     for col in cols_needed:

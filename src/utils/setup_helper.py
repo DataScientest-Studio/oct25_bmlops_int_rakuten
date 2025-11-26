@@ -54,23 +54,30 @@ def load_args():
 
 def load_env_vars():
     """
-    Load environment variables from a .env file if available.
+    Load environment variables from an .env file if available.
     """
+
     env_path = find_dotenv()
-    session_path = find_dotenv(filename=".env.session")
-
-    if session_path:
-        load_dotenv(session_path)
-        print("Variable from .env.session loaded")
-
-    if session.env_loaded:
-        return None
     
-    if env_path:
+    try:
+        session_path = find_dotenv(filename=".env.session")
+
+        if session_path:
+            load_dotenv(session_path)
+            print("Variable from .env.session loaded")
+
+        if session.env_loaded:
+            return None
+        
+        if env_path:
+            load_dotenv(env_path)
+            print("Variable from .env loaded")
+            session.env_loaded = True
+    
+    except Exception:
         load_dotenv(env_path)
         print("Variable from .env loaded")
-        session.env_loaded = True
-    
+        
 
 def info_as_string(df):
     buffer = io.StringIO()

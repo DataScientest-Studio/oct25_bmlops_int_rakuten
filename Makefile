@@ -14,12 +14,15 @@ repo_push:
 etl:
 	bash ${ROOT}/src/1_ETL.sh
 
-create_embeds:
-	bash ${ROOT}/src/2_create_embeds.sh 
+# create_embeds:
+# 	bash ${ROOT}/src/2_create_embeds.sh 
 
-create_sim_mat:
-	bash ${ROOT}/src/3_create_SimMat.sh ${ENV} ${N_NEIGHBORS}
+data_split:
+	bash ${ROOT}/src/3_data_split.sh
 
-recommend:
-	bash ${ROOT}/src/4_recommend.sh ${ENV} ${N_NEIGHBORS}
+# create_sim_mat:
+# 	bash ${ROOT}/src/3_create_SimMat.sh ${ENV} ${N_NEIGHBORS}
+
+# recommend:
+# 	bash ${ROOT}/src/4_recommend.sh ${ENV} ${N_NEIGHBORS}
 
