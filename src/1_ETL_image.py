@@ -12,18 +12,9 @@ from utils.db_helper import setup_mongodb
 
 load_env_vars()
 
-try:
-    # if not :
-    get_paths
-
-    ROOT = session.root
-    DATA = session.data
-    VENV = session.venv
-
-except Exception:
-    ROOT = os.getenv("ROOT")
-    DATA = os.getenv("DATA")
-    VENV = os.getenv("VENV")
+ROOT = os.getenv("ROOT")
+DATA = os.getenv("DATA")
+VENV = os.getenv("VENV")
 
 ############################################## Unzipp images###############################################
 zip_path = DATA / "images.zip"

@@ -20,18 +20,9 @@ from datetime import datetime
 
 load_env_vars()
 
-try:
-    # if not :
-    get_paths
-
-    ROOT = session.root
-    DATA = session.data
-    VENV = session.venv
-
-except Exception:
-    ROOT = os.getenv("ROOT")
-    DATA = os.getenv("DATA")
-    VENV = os.getenv("VENV")
+ROOT = os.getenv("ROOT")
+DATA = os.getenv("DATA")
+VENV = os.getenv("VENV")
 
 # ROOT, DATA, VENV, _ = load_env_vars()
 
