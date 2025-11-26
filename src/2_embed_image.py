@@ -10,12 +10,30 @@ from tqdm import tqdm
 from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 import gc
-from utils.setup_helper import setup_mongodb, load_env_vars
+
+from utils.settings import session
+from utils.setup_helper import load_env_vars, get_paths
+from utils.db_helper import setup_mongodb
 from utils.ETL_preprocess_helper import get_mobilenet_embeddings
 from pymongo import UpdateOne
 from datetime import datetime
 
-ROOT, DATA, VENV, _ = load_env_vars()
+load_env_vars()
+
+try:
+    # if not :
+    get_paths
+
+    ROOT = session.root
+    DATA = session.data
+    VENV = session.venv
+
+except Exception:
+    ROOT = os.getenv("ROOT")
+    DATA = os.getenv("DATA")
+    VENV = os.getenv("VENV")
+
+# ROOT, DATA, VENV, _ = load_env_vars()
 
 IMAGES = DATA / "unzipped_images" / "images"
 IMAGES.mkdir(parents=True, exist_ok=True)
