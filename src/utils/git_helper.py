@@ -39,7 +39,7 @@ def run_git_capture(cmd, cwd=None):
         ["git"] + cmd,
         cwd=str(cwd),
         text=True,
-        check=True,
+        check=False,
         capture_output=True
     )
     output = result.stdout or ""

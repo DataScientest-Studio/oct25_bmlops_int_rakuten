@@ -105,19 +105,15 @@ def show_local_branch(root):
 def check_tracking(root):
     try:
         # checking tracking branch
-        tracking = gh.run_git_capture(
-            ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
-            cwd=root
-            )
+        return_code, tracking = has_upstream(root)
         
-        branch_track = tracking.stdout.strip()
-
-        if tracking.returncode != 0 or not branch_track:
+        if return_code != 0: #  or not branch_track:
             print("❌ No tracking/upstream branch set! Cannot pull safely.")
             print("👉 Fix with:")
             print("   git branch --set-upstream-to=origin/<branch> <branch>")
             return None
-    
+
+        branch_track = tracking.stdout.strip()
         
         # if branch_track is None:
         #     print("❌ Cannot pull — no upstream branch configured.")
@@ -131,6 +127,13 @@ def check_tracking(root):
         return None
 
 def check_commits(root):
+    # checking tracking branch
+    return_code, _ = has_upstream(root)
+        
+    if return_code != 0:
+        print("❌ Cannot check commits — no upstream set.")
+        return None
+    
     # check for uncommitted changes 
     status = gh.run_git_capture(["status", "--porcelain"], cwd=root).stdout.strip()
     if status:
@@ -187,6 +190,15 @@ def post_repo_check(root):
     gh.run_git(
         ["ls", "-l", str(root)], cwd=root)
     print("\n✅ POST-FETCH CHECK COMPLETED")
+
+
+def has_upstream(root):
+    """Return True if the current branch has an upstream."""
+    res = gh.run_git_capture(
+        ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
+        cwd=root
+    )
+    return res.returncode, res
 
 
 if __name__ == "__main__":

@@ -14,8 +14,7 @@ import unicodedata
 import pandas as pd
 import numpy as np
 from PIL import Image
-# from tensorflow.keras.applications import MobileNetV2
-# from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+
 import re
 import gc
 
@@ -34,6 +33,8 @@ def extract_product_id(filename):
 
 
 def get_mobilenet_embeddings(img_paths, batch_size=16):
+    from tensorflow.keras.applications import MobileNetV2
+    from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
     base_model = MobileNetV2(weights="imagenet", 
                              include_top=False, 
                              pooling="avg")

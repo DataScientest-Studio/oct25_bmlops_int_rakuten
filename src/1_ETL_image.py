@@ -7,14 +7,15 @@ from pymongo import UpdateOne
 
 from utils.settings import session
 from utils.ETL_preprocess_helper import extract_product_id
-from utils.setup_helper import load_env_vars, get_paths
+from utils.setup_helper import load_env_vars
 from utils.db_helper import setup_mongodb
+from pathlib import Path
 
 load_env_vars()
 
-ROOT = os.getenv("ROOT")
-DATA = os.getenv("DATA")
-VENV = os.getenv("VENV")
+ROOT = Path(os.getenv("LOCAL_ROOT"))
+DATA = Path(os.getenv("LOCAL_DATA"))
+VENV = Path(os.getenv("LOCAL_VENV"))
 
 ############################################## Unzipp images###############################################
 zip_path = DATA / "images.zip"
@@ -71,7 +72,7 @@ df_test  = extract_metadata(TEST_IMAGES,  "metadata_test.csv")
 df_train = extract_metadata(TRAIN_IMAGES, "metadata_train.csv")
 
 
-db, coll_dict = setup_mongodb()
+db, db_name, coll_dict = setup_mongodb()
 collection = coll_dict["products"]
 now = datetime.now()
 
