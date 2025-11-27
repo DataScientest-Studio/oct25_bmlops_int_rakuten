@@ -3,7 +3,7 @@
 import importlib
 import os
 import pandas as pd 
-# from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer
 import numpy as np
 from rich.progress import Progress
 from pymongo import UpdateOne
@@ -102,7 +102,7 @@ def upload_embeds(df, collection):
 
     for record in records:
         ops.append(UpdateOne(
-            {"productid": record["productid"]},
+            {"productid": str(record["productid"])},
             {"$set": {"text_embed": record["embed_text"],
                       "upload_time (image)": now_emb},
             "$currentDate": {"lastModified": True }}

@@ -5,7 +5,7 @@ import os
 # from pathlib import Path
 import re
 from datetime import datetime  
-
+from pprint import pprint
 import click
 import pandas as pd
 import numpy as np
@@ -50,22 +50,38 @@ def main():
     
     # workflow  
     df_dict = data_preview(DATA_LAKE)
+    print(df_dict.keys())
     if not df_dict:
         print("Files cannot be found. Please check the input.")
         return None
         
-    dfs_to_update = eph.check_latest_products(df_dict, "products")
+    dfs_to_update = eph.check_latest_products2(df_dict, "products")
+    if "Y_train_CVw08PX" in df_dict:
+        dfs_to_update["Y_train_CVw08PX"] = df_dict["Y_train_CVw08PX"].copy()
     if not dfs_to_update:
         print("✅ Database is up-to-date")
         return None
     
-    cleaned_dfs = eph.clean_text(dfs_to_update, F_NAMES)
+    cleaned_dfs = {}  # neues Dictionary für bereinigte DataFrames
+    for name, df in dfs_to_update.items():
+        df_copy = df.copy()
+        if "designation" in df_copy.columns:
+            df_copy["clean_designation"] = df_copy["designation"].apply(eph.clean_text)
+        if "description" in df_copy.columns:
+            df_copy["clean_description"] = df_copy["description"].apply(eph.clean_text)
+        cleaned_dfs[name] = df_copy
     dfs = merge_dfs(cleaned_dfs, F_NAMES)
+    
     if not dfs:
         return None
                 
     upload_data_mongoDB(dfs, F_NAMES) 
-                
+    eph.merge_duplicate_products_debug()
+    
+    db, db_name, coll_dict = dh.setup_mongodb()
+    collection = coll_dict.get("products")
+    col = db["products"]
+    pprint(col.find_one())
 
 def data_preview(lake, f_names=None):
     """
@@ -132,7 +148,7 @@ def merge_dfs(dfs, names=None):
         return None 
 
 
-def upload_data_mongoDB(dfs, names=None, coll_name="product"):
+def upload_data_mongoDB(dfs, names=None, coll_name="products"):
     """
     Docstring for upload_data_mongoDB
     
@@ -166,12 +182,18 @@ def upload_data_mongoDB(dfs, names=None, coll_name="product"):
             data["upload_time (text)"] = now_db
 
             records = []
-            records.append(UpdateOne(
-                            {"productid": data["productid"]},
-                            {"$set": data,
-                            "$currentDate": {"lastModified": True }},
-                            upsert=True
-                            ))
+
+            for _, row in data.iterrows():
+                record = row.to_dict()
+                record["source"] = name
+                record["upload_time (text)"] = now_db
+
+                records.append(UpdateOne(
+                    {"productid": str(record["productid"])},  # einzelner Wert
+                    {"$set": record, "$currentDate": {"lastModified": True}},
+                    upsert=True
+                ))
+
 
             collection.bulk_write(records)
             # records = data.to_dict(orient="records")

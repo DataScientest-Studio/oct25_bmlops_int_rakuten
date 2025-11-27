@@ -89,7 +89,7 @@ def check_chars(text):
         
     return bool(allowed_pattern.match(text))
 
-def clean_text(text):
+def clean_text(text, f_names=None):
     if not isinstance(text, str):
         return ""
 
@@ -145,9 +145,9 @@ def check_latest_products(df_dict, coll_name):
         old_image = []
         old_text = []
         if "upload_time (image)" in df.columns:
-            old_image = df_db[df_db["upload_time (image))"] < cutoff]["productid"].tolist()    
+            old_image = df_db[df_db["upload_time (image)"] < cutoff]["productid"].tolist()    
         if "upload_time (text)" in df.columns:
-            old_text = df_db[df_db["upload_time (text))"] < cutoff]["productid"].tolist()    
+            old_text = df_db[df_db["upload_time (text)"] < cutoff]["productid"].tolist()    
 
         # outdated_image = df[df["upload_time (image))"] < df_db["upload_time (image))"]]["productid"].tolist()    
         # outdated_text = df[df["upload_time (text))"] < df_db["upload_time (text)"]]["productid"].tolist()    
@@ -169,3 +169,182 @@ def check_latest_products(df_dict, coll_name):
 
     return need_update
 
+def check_latest_products2(df_dict, coll_name):
+    # load MongoDB
+    _, _, coll_dict = dh.setup_mongodb()
+    
+    collection = coll_dict.get(coll_name)
+    if collection is None:
+        print(f"⚠️ No collection '{coll_name}' found in db")
+        return df_dict  # einfach alles zurückgeben
+
+    df_db = dh.load_cursor(collection, ["productid","upload_time (image)","upload_time (text)"])
+    for col in ["upload_time (image)","upload_time (text)"]:
+        if col in df_db.columns:
+            df_db[col] = pd.to_datetime(df_db[col], errors='coerce')
+
+    # --- minimaler Eingriff: force all ---
+    need_update = {}
+    for name, df in df_dict.items():
+        need_update[name] = df.copy()  # alles nehmen, ungefiltert
+        print(f"Preparing to update all products for '{name}' ({len(df)} rows).")
+    
+    return need_update
+
+def merge_duplicate_products(coll_name="products", overwrite=True):
+    """
+    Merges documents that belong to the same product (productid/product_id).
+    """
+
+    from pymongo import MongoClient
+    from pprint import pprint
+
+    db, db_name, coll_dict = dh.setup_mongodb()
+    
+    col = coll_dict.get(coll_name)
+    if col is None:
+        raise ValueError(f"Collection '{coll_name}' not found in coll_dict.")
+
+    print("Loading documents...")
+    docs = list(col.find({}))
+    print(f"Found {len(docs)} documents before merge.")
+
+    merged = {}
+
+    for doc in docs:
+        # Detect product key
+        if "productid" in doc:
+            pid = doc["productid"]
+        elif "product_id" in doc:
+            pid = doc["product_id"]
+        else:
+            print(f"WARNING: No product id key in doc {doc.get('_id')}")
+            continue
+
+        # normalize: keep only "productid"
+        new_doc = doc.copy()
+        new_doc.pop("_id", None)
+
+        if "product_id" in new_doc and "productid" not in new_doc:
+            new_doc["productid"] = new_doc.pop("product_id")
+
+        # Merge
+        if pid not in merged:
+            merged[pid] = new_doc
+        else:
+            merged[pid].update(new_doc)
+
+    merged_docs = list(merged.values())
+    print(f"After merge: {len(merged_docs)} unique documents.")
+
+    # Write merged data back
+    if overwrite:
+        print("Overwriting collection...")
+        col.delete_many({})
+        col.insert_many(merged_docs)
+        print("Write complete.")
+    else:
+        print("overwrite=False → no database writes performed.")
+    
+    print("\n=== Beispiel-Dokument aus DB ===")
+    example = db["products"].find_one({})
+    pprint(example)
+    return merged_docs
+
+def merge_duplicate_products_debug(coll_name="products", overwrite=False):
+    """
+    Debug-Version: zeigt exakt, warum Dokumente nicht gemerged werden.
+    """
+
+    from pprint import pprint
+    
+
+    # Mongo Setup
+    db, db_name, coll_dict = dh.setup_mongodb()
+    col = coll_dict.get(coll_name)
+
+    print("\n=== Loading documents ===")
+    docs = list(col.find({}))
+    print(f"Loaded: {len(docs)} documents")
+
+    # --- ANALYZE KEYS ---
+    print("\n=== Checking which product-ID keys exist ===")
+    key_counts = {"productid": 0, "product_id": 0, "none": 0}
+
+    for doc in docs:
+        if "productid" in doc:
+            key_counts["productid"] += 1
+        elif "product_id" in doc:
+            key_counts["product_id"] += 1
+        else:
+            key_counts["none"] += 1
+
+    pprint(key_counts)
+
+    # --- GROUP BY VALUE ---
+    print("\n=== Checking value overlap ===")
+
+    seen = {}
+    collision_counter = 0
+
+    for doc in docs:
+        if "productid" in doc:
+            pid = doc["productid"]
+        elif "product_id" in doc:
+            pid = doc["product_id"]
+        else:
+            pid = None
+
+        if pid not in seen:
+            seen[pid] = [doc]
+        else:
+            seen[pid].append(doc)
+            collision_counter += 1
+
+    print(f"Found {collision_counter} duplicate product IDs")
+
+    # Show example duplicate
+    for pid, lst in seen.items():
+        if len(lst) > 1:
+            print("\n--- Example duplicate ---")
+            print(f"productid = {pid}, count = {len(lst)}")
+            pprint(lst)
+            break
+    else:
+        print("NO duplicates detected → merge cannot happen!")
+        return []
+
+    # --- PERFORM MERGE ---
+    print("\n=== Performing merge ===")
+    merged = {}
+
+    for doc in docs:
+
+        if "productid" in doc:
+            pid = doc["productid"]
+        elif "product_id" in doc:
+            pid = doc["product_id"]
+        else:
+            continue
+
+        new_doc = doc.copy()
+        new_doc.pop("_id", None)
+
+        if "product_id" in new_doc and "productid" not in new_doc:
+            new_doc["productid"] = new_doc.pop("product_id")
+
+        if pid not in merged:
+            merged[pid] = new_doc
+        else:
+            merged[pid].update(new_doc)
+
+    merged_docs = list(merged.values())
+    print(f"After merge: {len(merged_docs)} docs")
+
+    if overwrite:
+        print("Overwriting collection...")
+        col.delete_many({})
+        col.insert_many(merged_docs)
+        print("Write complete.")
+
+    return merged_docs

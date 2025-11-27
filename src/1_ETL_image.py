@@ -4,7 +4,7 @@ import pandas as pd
 import os
 from datetime import datetime
 from pymongo import UpdateOne
-
+from pprint import pprint
 from utils.settings import session
 from utils.ETL_preprocess_helper import extract_product_id
 from utils.setup_helper import load_env_vars, get_paths
@@ -54,7 +54,7 @@ def extract_metadata(image_dir, output_name):
                 continue
 
             records.append({
-                "product_id": product_id,
+                "productid": str(product_id),
                 "path": str(img_file.relative_to(DATA)),
                 "width": width,
                 "height": height
@@ -85,7 +85,7 @@ def upload_df_to_mongo(df, source_name):
 
         ops.append(
             UpdateOne(
-                {"product_id": doc["product_id"], "path": doc["path"]},
+                {"productid": doc["productid"], "path": doc["path"]},
                 {"$set": doc},
                 upsert=True
             )
@@ -103,4 +103,4 @@ print("Total documents:", count)
 
 if count:
     print("\nExample document:")
-    print(collection.find_one())
+    pprint(collection.find_one())

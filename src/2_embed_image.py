@@ -10,7 +10,7 @@ from tqdm import tqdm
 from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 import gc
-
+from pprint import pprint
 from utils.settings import session
 from utils.setup_helper import load_env_vars, get_paths
 from utils.db_helper import setup_mongodb
@@ -90,7 +90,7 @@ df_emb_test['embedding'] = [embeddings_test[i] for i in valid_idx_test]
 print(f"Calculated Embeddings: {len(df_emb_test)} / {len(metadata_df_test)}")
 
 # convert Embeddings into strings 
-df_emb_test['embedding_str'] = df_emb_test['embedding'].apply(
+df_emb_test['embedding_img'] = df_emb_test['embedding'].apply(
     lambda x: ",".join(map(str, x)) if x is not None else None
 )
 
@@ -100,7 +100,7 @@ print("df_test_with_embeddings.csv saved.")
 
 
 
-def upload_embeddings(df, collection, embedding_col="embedding_str"):
+def upload_embeddings(df, collection, embedding_col="embedding_img"):
     """
     Upload embeddings to MongoDB.
     df: DataFrame containing at least 'product_id' and embedding_col
@@ -108,14 +108,14 @@ def upload_embeddings(df, collection, embedding_col="embedding_str"):
     embedding_col: column in df to upload ('embedding_str' or 'embedding')
     """
     # Erstelle Records für MongoDB
-    records = df[["product_id", embedding_col]].to_dict(orient="records")
+    records = df[["productid", embedding_col]].to_dict(orient="records")
 
     ops = []
     now = datetime.now()
 
     for record in records:
         ops.append(UpdateOne(
-            {"product_id": str(record["product_id"])},           # Match-Filter
+            {"productid": str(record["productid"])},           # Match-Filter
             {"$set": {embedding_col: record[embedding_col]},
              "$currentDate": {"lastModified": True}},     # Aktualisiere lastModified
             upsert=False                                  # Falls Produkt noch nicht existiert
@@ -128,12 +128,12 @@ def upload_embeddings(df, collection, embedding_col="embedding_str"):
 db, db_name, coll_dict = setup_mongodb()
 collection = coll_dict["products"]  
 
-upload_embeddings(df_emb_train, collection, embedding_col="embedding_str")
-upload_embeddings(df_emb_test, collection, embedding_col="embedding_str")
+upload_embeddings(df_emb_train, collection, embedding_col="embedding_img")
+upload_embeddings(df_emb_test, collection, embedding_col="embedding_img")
 
 count = collection.count_documents({})
 print("Total documents:", count)
 
 if count:
     print("\nExample document:")
-    print(collection.find_one())
+    pprint(collection.find_one())
