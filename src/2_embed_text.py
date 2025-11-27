@@ -3,7 +3,6 @@
 import importlib
 import os
 import pandas as pd 
-# from sentence_transformers import SentenceTransformer
 import numpy as np
 from rich.progress import Progress
 from pymongo import UpdateOne
@@ -63,6 +62,8 @@ def prepare_embed(df_in):
 
 def embed_text(df_in):
     print("Start creating embeddings from 'text'")
+    from sentence_transformers import SentenceTransformer
+    
     # path = os.path.join(df_in, "df_test_embedded.csv")
     # df_pre = pd.read_csv(path)
     # df = df_pre.head(10).copy()

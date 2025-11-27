@@ -90,6 +90,9 @@ target/
 # Mypy cache
 .mypy_cache/
 
+# folder for 'external' data input
+**/upload
+
 # files for use in development (recursive search)
 **/*_dev_*
 **/uv.lock

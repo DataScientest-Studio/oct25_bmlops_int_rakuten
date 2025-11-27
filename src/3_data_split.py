@@ -12,7 +12,8 @@ importlib.reload(dh)
 
 @click.command()
 def main():
-
+    # WELCHE DATEN?
+    # 
     cols_needed = ["_id", "productid"]
     coll_name = "products"
     NUM_SLICES = click.prompt("How many subgroups should be created?",

@@ -1,11 +1,11 @@
-##
+## setup_helper.py
 # imports
 # from pymongo import MongoClient
 from dotenv import load_dotenv, find_dotenv
 import os
 import io
 from pathlib import Path
-import importlib
+# import importlib
 import argparse
 from datetime import datetime 
 
@@ -73,7 +73,6 @@ def load_env_vars():
     session.env_loaded = True
  
         
-
 def info_as_string(df):
     buffer = io.StringIO()
     df.info(buf=buffer)
@@ -93,9 +92,9 @@ def log_header(title, log=None):
         print(f"--- {title} --- {datetime.now():%Y-%m-%d %H:%M:%S} ---\n")
         print("=" * 50 + "\n")
 
+
 def get_paths():        
     # load environment variables
-    importlib(session)
     env = session.env
     print(f"Using env: {env}")
     # print("[DEBUG] LOCAL_ROOT =", os.getenv("LOCAL_ROOT"))

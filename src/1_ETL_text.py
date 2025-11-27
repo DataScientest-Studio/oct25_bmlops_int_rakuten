@@ -1,6 +1,6 @@
 ##
 # imports 
-import importlib
+# import importlib
 import os
 # from pathlib import Path
 import re
@@ -16,9 +16,10 @@ import utils.setup_helper as sh
 import utils.db_helper as dh 
 from utils.settings import session
 
-importlib.reload(eph)
-importlib.reload(sh)
-importlib.reload(dh)
+# relevant for development
+# importlib.reload(eph)  
+# importlib.reload(sh)
+# importlib.reload(dh)
 
 @click.command()
 def main():

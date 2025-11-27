@@ -61,6 +61,7 @@ for name, ar in [("product_ids", product_ids),
                  ("text_emb", text_emb), 
                  ("image_emb", image_emb),
                  ("embed_comb", embed_comb)]:
+    
     save_path = SM_FOLDER / f"{name}.npy"
     np.save(save_path, ar)
     print(f"Saved {name}:\tshape: {ar.shape}")
