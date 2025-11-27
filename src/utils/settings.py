@@ -20,7 +20,7 @@ class Session:
         file_path = Path(self.root) / ".env.session"
 
         state= {
-            "SESSION_ENV": self.env if self.env is not None else None,,
+            "SESSION_ENV": self.env if self.env is not None else None,
             "SESSION_BRANCH": self.branch if self.branch is not None else None,
             "SESSION_ROOT": str(self.root) if self.root is not None else None,
             "SESSION_DATA": str(self.data) if self.data is not None else None,

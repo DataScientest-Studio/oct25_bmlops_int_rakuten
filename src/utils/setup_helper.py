@@ -92,8 +92,7 @@ def log_header(title, log=None):
         print("=" * 50 + "\n")
 
 def get_paths():        
-    # load environment variables
-    importlib(session)
+    from utils.settings import session
     env = session.env
     print(f"Using env: {env}")
     # print("[DEBUG] LOCAL_ROOT =", os.getenv("LOCAL_ROOT"))

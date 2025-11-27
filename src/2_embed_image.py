@@ -20,18 +20,9 @@ from datetime import datetime
 
 load_env_vars()
 
-try:
-    # if not :
-    get_paths
-
-    ROOT = session.root
-    DATA = session.data
-    VENV = session.venv
-
-except Exception:
-    ROOT = os.getenv("ROOT")
-    DATA = os.getenv("DATA")
-    VENV = os.getenv("VENV")
+ROOT = Path(os.getenv("LOCAL_ROOT"))
+DATA = Path(os.getenv("LOCAL_DATA"))
+VENV = Path(os.getenv("LOCAL_VENV"))
 
 # ROOT, DATA, VENV, _ = load_env_vars()
 
@@ -124,18 +115,25 @@ def upload_embeddings(df, collection, embedding_col="embedding_str"):
 
     for record in records:
         ops.append(UpdateOne(
-            {"product_id": record["product_id"]},           # Match-Filter
+            {"product_id": str(record["product_id"])},           # Match-Filter
             {"$set": {embedding_col: record[embedding_col]},
              "$currentDate": {"lastModified": True}},     # Aktualisiere lastModified
-            upsert=True                                     # Falls Produkt noch nicht existiert
+            upsert=False                                  # Falls Produkt noch nicht existiert
         ))
     
     if ops:
         results = collection.bulk_write(ops)
         print(f"Modified/Inserted count: {results.modified_count + len(results.upserted_ids)}")
 
-db, coll_dict = setup_mongodb()
+db, db_name, coll_dict = setup_mongodb()
 collection = coll_dict["products"]  
 
 upload_embeddings(df_emb_train, collection, embedding_col="embedding_str")
 upload_embeddings(df_emb_test, collection, embedding_col="embedding_str")
+
+count = collection.count_documents({})
+print("Total documents:", count)
+
+if count:
+    print("\nExample document:")
+    print(collection.find_one())
