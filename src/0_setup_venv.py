@@ -11,22 +11,16 @@ import click
 import utils.setup_helper as sh 
 from utils.settings import session
 
-importlib.reload(sh)
+sh = importlib.reload(sh)
 
-@click.command()
-def main():
+def main(env=None):
+    env = session.env
+    print("Running with env:", env)
     # load env variables from .env and .env.session
     sh.load_env_vars()
 
     # get input from prompt
-    ENV = click.prompt("Which packages should be installed?", 
-                        type=click.Choice(["core", "+_heavy", "+_dev", "all"]), 
-                        default=os.getenv("ENV"),
-                        show_choices=True)
-    print(f"[INPUT] env = {ENV}")   
-    
-    
-    session.env = ENV
+    # session.env = env
 
     # load paths from .env
     sh.get_paths()
@@ -43,7 +37,7 @@ def main():
     short = sh.shorten_path(sys.executable, n=3)
     print(f"ℹ️ Using Python interpreter: ../{short}")
 
-    install_packages(ENV, ROOT, LOGFILE)
+    install_packages(env, ROOT, LOGFILE)
     
     print("\nVirtual environment setup complete.")
 
@@ -53,12 +47,14 @@ def install_packages(env, root, logfile):
     print("\nInstalling required packages...")
 
     cmd = ["uv", "sync"]
-    if env == "+_heavy":
-        cmd += ["--group", "heavy"]
-    elif env == "+_dev":
+    # if env == "base":
+    #     cmd += ["--group", "base"]
+    if env == "+mlops":
+        cmd += ["--group", "mlops"]
+    elif env == "+dev":
         cmd += ["--group", "dev"]
     elif env == "all":
-        cmd += ["--group", "heavy", "--group", "dev"]    
+        cmd += ["--group", "mlops", "--group", "heavy", "--group", "dev"]    
     
 
     # with open(logfile, "a") as log:
@@ -72,9 +68,19 @@ def install_packages(env, root, logfile):
         print(f"❌ uv sync failed. Check log: {logfile}")
         sys.exit(1)
 
-    print(f"✅ Packages installed ({env}).")
+    print(f"✅ Packages from {env} dependency group installed.")
 
-
+@click.command()
+@click.option("--env", 
+              type=click.Choice(["base", "+mlops", "+dev", "all"]), 
+              # prompt="Select dependency group",
+              required=False, 
+              # default=None, 
+              show_choices=True
+              )
+@sh.cli_or_api
+def main_entry_check(env):
+    main(env)
 
 if __name__ == "__main__":
-    main()
+    main_entry_check()

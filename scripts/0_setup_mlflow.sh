@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+# exit on error
+set -e
+
+# echo "DEBUG: SCRIPT REACHED"
+
+# define paths
+PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." &> /dev/null && pwd )"
+
+mkdir -p "$PROJECT_ROOT/logs"
+LOGFILE="$PROJECT_ROOT/logs/0_mlflow.log"
+
+# import env variables from .env
+{
+  if [ -f "$PROJECT_ROOT/.env" ]; then
+      echo "Loading environment variables from $PROJECT_ROOT/.env"
+      set -o allexport
+      source "$PROJECT_ROOT/.env"
+      set +o allexport
+  fi
+} >> "$LOGFILE" 2>&1
+
+# Fallback falls kein .env vorhanden
+MLFLOW_DB=${MLFLOW_DB:-"sqlite:///mlflow/db/mlflow.db"} 
+ARTIFACT_DIR=${ARTIFACT_DIR:-"./mlflow/artifacts"}
+
+# Kürzen auf die letzten 2–3 Teile des Pfads
+short_db=$(echo "$MLFLOW_DB" | awk -F'/' '{print $(NF-2)"/"$(NF-1)"/"$NF}')
+short_artifacts=$(echo "$ARTIFACT_DIR" | awk -F'/' '{print $(NF-1)"/"$NF}')
+
+# clean up ports 
+# port=5000
+# pid=$(ss -tulpn | grep ":$port" | grep -oP 'pid=\K[0-9]+')
+
+# if [ -n "$pid" ]; then
+#     echo "⚠️ Port $port is in use by PID $pid. Killing it..." | tee -a "$LOGFILE"
+#     kill -9 "$pid"
+#     sleep 1
+# else
+#     echo "Port $port is free."
+# fi
+
+# run script
+{
+  echo ""
+  echo "===== START MLFLOW_SERVER_SETUP [$(date '+%Y-%m-%d %H:%M:%S')] ===="
+  echo "DB: .../$short_db"
+  echo "Artifacts: .../$short_artifacts"
+
+  # SQLite --> only local + one user access possible
+  exec mlflow server \
+    --backend-store-uri $MLFLOW_DB \
+    --default-artifact-root $ARTIFACT_DIR \
+    --host 127.0.0.1 \
+    --port 5000 \
+     >> "$LOGFILE" 2>&1 &
+  
+  echo "MLflow server started with PID $!"
+  echo "===== END MLFLOW_SERVER_SETUP [$(date '+%Y-%m-%d %H:%M:%S')] ===="
+  echo ""
+
+}  >> "$LOGFILE" 2>&1

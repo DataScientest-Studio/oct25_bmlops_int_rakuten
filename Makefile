@@ -2,23 +2,31 @@ ROOT := $(CURDIR)
 # ENV ?= core 
 # N_NEIGHBORS ?= 5
 # MSG ?= auto
+# MODE == 
+# NUM ==
 
-.PHONY: setup_environment etl create_embeds
+.PHONY: setup_env repo_push mlflow etl   # etl create_embeds
 
 setup_env:
-	bash ${ROOT}/src/0_init_setup.sh
+	bash "${ROOT}/scripts/0_init_setup.sh"
 
 repo_push:
-	bash ${ROOT}/src/0_repo_push.sh 
+	bash "${ROOT}/scripts/0_repo_push.sh" 
+
+mlflow:
+	bash "${ROOT}/scripts/0_setup_mlflow.sh" 
 
 etl:
-	bash ${ROOT}/src/1_ETL.sh
+	bash "${ROOT}/scripts/1_ETL.sh"
 
 # create_embeds:
-# 	bash ${ROOT}/src/2_create_embeds.sh 
+# 	bash ${ROOT}/scripts/2_create_embeds.sh 
 
-data_split:
-	bash ${ROOT}/src/3_data_split.sh
+# data_split:
+# 	bash ${ROOT}/scripts/0_data_split.sh ${MODE}=split ${NUM}
+
+# sample_data:
+# 	bash ${ROOT}/scripts/0_sample_data.sh ${MODE}=split ${NUM}
 
 # create_sim_mat:
 # 	bash ${ROOT}/src/3_create_SimMat.sh ${ENV} ${N_NEIGHBORS}

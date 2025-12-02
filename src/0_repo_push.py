@@ -6,13 +6,12 @@ import importlib
 import os
 # from datetime import datetime
 
-import utils.setup_helper as sh # import setup_mongodb, load_env_vars
-import utils.git_helper as gh # import run_git, commit_auto, commit_with_template
-# from utils.settings import session
+import utils.setup_helper as sh
+import utils.git_helper as gh 
 
 importlib.reload(sh)
 importlib.reload(gh)
-
+ 
 def main():
     # Configuration
     sh.load_env_vars()

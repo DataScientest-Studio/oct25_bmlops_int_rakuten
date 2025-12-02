@@ -79,6 +79,7 @@ target/
 /data/
 /logs/
 **/*commit_msg*
+/mlflow/
 
 # Mac OS-specific storage files
 .DS_Store
@@ -99,3 +100,4 @@ target/
 **/*_old_*
 **/.env.session
 **/*.ipynb
+_backup/pyproject copy.toml

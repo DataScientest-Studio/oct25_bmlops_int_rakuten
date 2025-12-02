@@ -14,10 +14,12 @@ def load_cursor(coll_name, cols_needed):
     if collection is None:
         return None
     
-    projection = {"_id": 0} 
-    
-    for col in cols_needed:
-        projection[col] = 1
+    if not cols_needed:
+        projection = {"_id": 0} 
+    else:
+        projection = {"_id": 0}   
+        for col in cols_needed:
+            projection[col] = 1
 
     cursor = collection.find({}, projection) 
     docs = list(cursor)
@@ -26,7 +28,7 @@ def load_cursor(coll_name, cols_needed):
         print("No documents found in MongoDB.")
         return None 
 
-    return pd.DataFrame(docs)
+    return docs
 
 
 def setup_mongodb(db_name: str = None, 

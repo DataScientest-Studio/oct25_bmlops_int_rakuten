@@ -110,7 +110,8 @@ def check_tracking(root):
         if return_code != 0: #  or not branch_track:
             print("❌ No tracking/upstream branch set! Cannot pull safely.")
             print("👉 Fix with:")
-            print("   git branch --set-upstream-to=origin/<branch> <branch>")
+            print("   git branch --set-upstream-to=origin/<branch> <branch>\tor")
+            print("   git fetch origin <branch>:<branch>")
             return None
 
         branch_track = tracking.stdout.strip()
