@@ -5,10 +5,10 @@ import click
 # import importlib
 
 import utils.setup_helper as sh
-import utils.db_helper as dh
+import src.utils.database_helper as dbh
 from utils.data_handling import list_products, create_subgroups
 
-# importlib.reload(dh)
+# importlib.reload(dbh)
 
 
 # ---------
@@ -23,7 +23,7 @@ def main(fname, num):
 
     # loading data from 
     if not fname:
-        df = dh.load_cursor(coll_name, cols_needed)
+        df = dbh.load_cursor(coll_name, cols_needed)
     
     else:
         from pathlib import Path

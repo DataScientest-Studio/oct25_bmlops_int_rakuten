@@ -5,7 +5,7 @@ import time
 import numpy as np
 from pymongo import UpdateOne
 
-import utils.db_helper as dh
+import src.utils.database_helper as dbh
 
 ### 
 def list_products(df):
@@ -21,7 +21,7 @@ def create_subgroups(id_list, num, coll_name=None):
     # configuration + loading
     seed = random_seed_numpy()
     
-    collection = dh.load_collection(coll_name)
+    collection = dbh.load_collection(coll_name)
 
     # generate random subgroup assigment 
     subgroup = np.random.randint(0, 
@@ -52,7 +52,7 @@ def draw_samples(id_list, samp_size, coll_name=None):
     # configuration + loading
     seed = random_seed_numpy()
     
-    collection = dh.load_collection(coll_name)
+    collection = dbh.load_collection(coll_name)
 
     samples = np.random.choice(id_list, size=samp_size, replace=False)
 

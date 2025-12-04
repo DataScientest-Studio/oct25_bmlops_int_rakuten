@@ -14,12 +14,13 @@ import unicodedata
 import pandas as pd
 import numpy as np
 from PIL import Image
+from rich.progress import Progress
 
 import re
 import gc
 
 import utils.setup_helper as sh
-import utils.db_helper as dh
+import src.utils.database_helper as dbh
 from utils.settings import session
 
 
@@ -80,6 +81,51 @@ def get_mobilenet_embeddings(img_paths, batch_size=16):
 # TEXT FUNCTION
 #########################
 
+def check_and_clean_text(df_dict, text_col=None):
+    if not text_col:
+        text_col = ["description", "designation"]
+
+    df_to_merge = {}
+
+    for name, df in df_dict.items():
+        df_clean = df.copy()
+
+        print(f"{'='*45}\n📘 CHECKING AND CLEANING: '{name}'\n{'='*45}\n")
+        for col in text_col:
+            if col not in df_clean.columns:
+                print(f"⚠️  Column '{col}' not found in {name}, skipping.\n")
+                continue
+
+            df_clean[f"is_valid_{col}"] = df_clean[col].apply(check_chars)
+            invalid_pre = df_clean.loc[~df_clean[f"is_valid_{col}"], col]
+
+            print(f"🔍 BEFORE Cleaning column '{col}' in '{name}': {len(invalid_pre)} invalid entries ({len(invalid_pre)/len(df_clean):.2%})")
+            if len(invalid_pre) > 0:
+                exemple = invalid_pre.iloc[0]
+                print("-->  Example:", exemple[:120] if isinstance(exemple, str) else exemple)
+
+            print(f"\n🧽 START Cleaning column '{col}' in '{name}'")
+            df_clean[f"clean_{col}"] = df_clean[col].apply(clean_text)
+
+            df_clean[f"is_valid_2_{col}"] = df_clean[f"clean_{col}"].apply(check_chars)
+            invalid_post = df_clean.loc[~df_clean[f"is_valid_2_{col}"], col]
+            # invalid_post = df.loc[df[f"clean_{col}"].str.contains(r"<[^>]+>|&[a-z]+;", regex=True, na=False), col]
+            print(f"\n✅ AFTER Cleaning column '{col}' in '{name}': {len(invalid_post)} invalid entries ({len(invalid_post)/len(df_clean):.2%})")
+            if len(invalid_post) > 0:
+                exemple_2 = invalid_post.iloc[0]
+                print("-->  Example:", exemple[:120] if isinstance(exemple_2, str) else exemple_2)
+
+        df_to_merge[f'{name}'] = df_clean # print()
+
+        return df_to_merge
+    
+        # try:
+        #     df_clean.to_csv(f"{DATA_PROCESSED}/{name}_clean.csv")
+        #     print(f"✅ SAVED DF '{name}_clean' successfully\n")
+        # except Exception as e:
+        #     print(f"⚠️ ERROR -- DF '{name}_clean': {e}")
+
+
 # "CLEANING" functions
 allowed_pattern = re.compile(r"^[\wÀ-ÖØ-öø-ÿ0-9\s.,;:!?%€$'\"()\-–—°/&#+]+$")
 
@@ -114,7 +160,7 @@ def clean_text(text):
 
 def check_latest_products(df_dict, coll_name):
     # load MongoDB
-    _, _, coll_dict = dh.setup_mongodb()
+    _, _, coll_dict = dbh.setup_mongodb()
     
     collection = None
     for key, value in coll_dict.items():
@@ -129,7 +175,7 @@ def check_latest_products(df_dict, coll_name):
         print(f"⚠️ No collection '{coll_name}' found in db")
         return None
 
-    df_db = dh.load_cursor(collection, cols_needed)
+    df_db = dbh.load_cursor(collection, cols_needed)
 
     time_cols = ["upload_time (image)", "upload_time (text)"]
 
@@ -168,4 +214,52 @@ def check_latest_products(df_dict, coll_name):
         need_update[f"{name}"] = df_reduced 
 
     return need_update
+
+
+def prepare_text_embeds(df_in):
+    print("Start preparing df for embeddings")
+    df = df_in.copy()
+
+    # prepare df for embedding
+    df["text"] = (
+        df["clean_designation"].fillna("").astype(str).str.strip()
+        + " "
+        + df["clean_description"].fillna("").astype(str).str.strip()
+                ).str.strip()
+            
+    print("created column 'text' from 'clean_designation' and 'clean_description'.")
+    return df
+
+
+def embed_text(df_in):
+    print("Start creating embeddings from 'text'")
+    from sentence_transformers import SentenceTransformer
+    
+    # path = os.path.join(df_in, "df_test_embedded.csv")
+    # df_pre = pd.read_csv(path)
+    # df = df_pre.head(10).copy()
+    df = df_in.copy()
+    
+    ## using SBERT for text embeddings
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    texts = df["text"].tolist()
+
+    embeddings = []
+    batch_size = 256
+
+    with Progress() as progress:
+        task = progress.add_task(f"Start embedding with {len(texts)} texts...", total=len(texts))
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i:i+batch_size]
+            emb = model.encode(batch, convert_to_numpy=True, normalize_embeddings=True)
+            embeddings.append(emb)
+            progress.update(task, advance=len(batch))
+
+    embeddings = np.vstack(embeddings)
+
+    print(f"Finished creating embeddings\n--> embeddings shape:\t", embeddings.shape)
+
+    df["text_embed"] = list(embeddings)
+
+    return df
 

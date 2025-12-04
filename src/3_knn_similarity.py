@@ -7,7 +7,7 @@ from utils.similarity_helper import create_array, combine_txt_img, create_knn_sm
 from utils.file_helper import save_pickle
 
 import utils.setup_helper as sh 
-import utils.db_helper as dh 
+import src.utils.database_helper as dbh 
 # from utils.settings import session
 
 @sh.cli_or_api
@@ -30,7 +30,7 @@ def main(num):
     # SM_FOLDER.mkdir(parents=True, exist_ok=True)
 
     # load cursors from MongoDB
-    docs = dh.load_cursor(coll_name, cols_needed)
+    docs = dbh.load_cursor(coll_name, cols_needed)
     docs = sorted(docs, key=lambda x: x["productid"])
 
     ar_prod, ar_txt, ar_img, idx_map = create_array(docs)

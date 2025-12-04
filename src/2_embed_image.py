@@ -13,7 +13,7 @@ import gc
 
 from utils.settings import session
 from utils.setup_helper import load_env_vars, get_paths
-from utils.db_helper import setup_mongodb
+from src.utils.database_helper import setup_mongodb
 from utils.ETL_preprocess_helper import get_mobilenet_embeddings
 from pymongo import UpdateOne
 from datetime import datetime

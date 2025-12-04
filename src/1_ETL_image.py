@@ -8,7 +8,7 @@ from pymongo import UpdateOne
 from utils.settings import session
 from utils.ETL_preprocess_helper import extract_product_id
 from utils.setup_helper import load_env_vars
-from utils.db_helper import setup_mongodb
+from src.utils.database_helper import setup_mongodb
 from pathlib import Path
 
 load_env_vars()

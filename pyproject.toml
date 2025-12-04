@@ -3,7 +3,7 @@ name = "recommsystem-rakuten"
 version = "0.1.0"
 description = "Content-based recommender system for Rakuten dataset"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.14"
 # (1) Basis: Leicht + unverzichtbar + schnell installierbar
 dependencies = [
     "pandas>=2.3.3",
@@ -19,13 +19,16 @@ dependencies = [
     "Pillow>=10.0",
     "simplejson",
     "dotenv>=0.9.9",
-    "pylance>=0.39.0",
     "ruff>=0.14.7",
+    "rich>=14.2.0",
 ]
 
 [dependency-groups]
 # (2) MLOps + klassische ML: mittel-schwer, aber nicht TF
 mlops = [
+    "dagster>=1.12.3",
+    "dagster-webserver>=1.12.3",
+    "dagster-dg-cli",
     "mlflow>=3.6.0",
     "scikit-learn>=1.7.2",
     "scipy>=1.10",
@@ -48,6 +51,7 @@ dev = [
     "nest-asyncio",
     "jedi",
 ]
+
 
 [tool.ruff]
 line-length = 100

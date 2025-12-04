@@ -5,6 +5,8 @@ import os
 import pandas as pd
 
 import utils.setup_helper as sh
+from pymongo import UpdateOne
+from datetime import datetime 
 
 
 # 
@@ -117,4 +119,87 @@ def load_collection(coll_name):
     
     return collection
 
-        
+    
+def upload_text_embeds(df, coll_name):
+    print("Starting upload of 'text_embed'")
+    records = df[["productid", "text_embed"]].to_dict(orient="records")
+    ops = []
+
+    now_emb = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    for record in records:
+        ops.append(UpdateOne(
+            {"productid": record["productid"]},
+            {"$set": {"text_embed": record["embed_text"],
+                      "upload_time (image)": now_emb},
+            "$currentDate": {"lastModified": True}}
+        ))
+    
+    collection = load_collection(coll_name)
+    results = collection.bulk_write(ops, ordered=False)      # prefer 'bulk_write' for multiple updates (> 85k records)
+    print("Finished upload of 'text_embed'")
+    print(f"Modified count:\t{results.modified_count} entries")
+
+
+def upload_df_mongoDB(dfs, names=None, coll_name="product"):
+    """
+    Docstring for upload_data_mongoDB
+    
+    :param dfs: Description
+    :param names: Description
+    :param coll_name: Description
+    """
+    # load MongoDB collection
+    collection = dh.load_collection(coll_name)
+
+    # loading data into MongoDB
+    now_db = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    allowed_cols = ['_id', 'prdtypecode', 
+                    'designation', 'clean_designation',
+                    'description', 'clean_description',
+                    'productid', 'imageid',
+                    "upload_time (text)",
+                    "upload_time (image)"]
+
+    if not names:
+        names = ["df_train", "df_test"]
+
+        for name, df in zip(names, 
+                            dfs):
+            # df = pd.read_csv(f"{DATA_PROCESSED}/{f}_clean.csv", index_col=0)
+            cols = [col for col in allowed_cols if col in df.columns]
+            
+            data = df[cols].copy()
+            data["source"] = name
+            data["upload_time (text)"] = now_db
+
+            records = []
+            records.append(UpdateOne(
+                            {"productid": data["productid"]},
+                            {"$set": data,
+                            "$currentDate": {"lastModified": True }},
+                            upsert=True
+                            ))
+
+            collection.bulk_write(records, ordered=False)
+            # records = data.to_dict(orient="records")
+            # collection.insert_many(records)
+            print(f"Inserted {len(records)} records from '{name}'.\n\t--> cols: {cols}\n")
+
+        print(f"\n{'='*60}\n--- DB CHECK AFTER DATA LOAD ---\n{'='*60}")
+        count = collection.count_documents({})
+        print(f"\nNumber of entries:\t{count}") #, collection.count_documents({}))
+
+        if count > 0:
+            print("\nExemple document:")
+            doc = collection.find_one()
+            for key, value in doc.items():
+                print(f"{key}:\t{value}")
+        else:
+            print("\nNo entries found in the collection.")
+    
+    else: 
+        print("Function probably not yet suitable for that input. Please check.")
+        # return None 
+     
