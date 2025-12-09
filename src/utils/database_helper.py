@@ -3,10 +3,10 @@
 import os
 
 import pandas as pd
-
-import utils.setup_helper as sh
 from pymongo import UpdateOne
 from datetime import datetime 
+
+from . import setup_helper as sh
 
 
 # 
@@ -26,11 +26,11 @@ def load_cursor(coll_name, cols_needed):
     cursor = collection.find({}, projection) 
     docs = list(cursor)
 
-    if not docs:
+    if not docs or len(docs) == 0:
         print("No documents found in MongoDB.")
         return None 
 
-    return docs
+    return pd.DataFrame(docs)
 
 
 def setup_mongodb(db_name: str = None, 
@@ -119,10 +119,11 @@ def load_collection(coll_name):
     
     return collection
 
-    
-def upload_text_embeds(df, coll_name):
+
+
+def upload_embeds(df, coll_name):
     print("Starting upload of 'text_embed'")
-    records = df[["productid", "text_embed"]].to_dict(orient="records")
+    records = df[["productid", "embed_text"]].to_dict(orient="records")
     ops = []
 
     now_emb = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -132,7 +133,7 @@ def upload_text_embeds(df, coll_name):
             {"productid": record["productid"]},
             {"$set": {"text_embed": record["embed_text"],
                       "upload_time (image)": now_emb},
-            "$currentDate": {"lastModified": True}}
+            "$currentDate": {"lastModified": True }}
         ))
     
     collection = load_collection(coll_name)
@@ -141,7 +142,8 @@ def upload_text_embeds(df, coll_name):
     print(f"Modified count:\t{results.modified_count} entries")
 
 
-def upload_df_mongoDB(dfs, names=None, coll_name="product"):
+
+def upload_data_mongoDB(dfs, coll_name="product"):
     """
     Docstring for upload_data_mongoDB
     
@@ -150,7 +152,7 @@ def upload_df_mongoDB(dfs, names=None, coll_name="product"):
     :param coll_name: Description
     """
     # load MongoDB collection
-    collection = dh.load_collection(coll_name)
+    collection = load_collection(coll_name)
 
     # loading data into MongoDB
     now_db = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -202,4 +204,4 @@ def upload_df_mongoDB(dfs, names=None, coll_name="product"):
     else: 
         print("Function probably not yet suitable for that input. Please check.")
         # return None 
-     
+ 

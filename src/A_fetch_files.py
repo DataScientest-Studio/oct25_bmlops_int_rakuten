@@ -1,8 +1,9 @@
 ## 
 # imports
 from pathlib import Path
-import src.utils.setup_helper as sh 
+import utils.setup_helper as sh 
 from utils.settings import session
+import utils.file_helper as fh 
 
 def fetch_files(path=None, file_type=None):
     if not path:
@@ -20,23 +21,27 @@ def fetch_files(path=None, file_type=None):
 
         path = INPUT
 
-    #     LAKE = DATA / "data_lake"
-    #     LAKE.mkdir(parents=True, exist_ok=True)
-    # else: 
-    #     LAKE = path
-    
-    
-
-    # if cli is True:
-    # Look for files in folder
-
     if not file_type:
-        file_type = [".csv", ".json"]
+        file_type = [".csv", 
+                     # ".json"
+                     ]
 
     folder = Path(path)
-    files = [f for f in folder.iterdir() if f.suffix.lower() in file_type]
+    files = [str(f) for f in folder.iterdir() if f.suffix.lower() in file_type]
+    
+    if not files:
+        print("No new files found")
+        return None
+    
+    files_new = []
+    for f in files:
+        # check for columns
+        # to be added
+        f_moved = fh.move_file(f, path)
+        files_new.append(str(f_moved))
 
-    return files
+    print(f"Found {len(files)} files in 'data_input' folder and moved them to folder 'data_lake'")
+    return files_new
 
 
 if __name__ == "__main__":

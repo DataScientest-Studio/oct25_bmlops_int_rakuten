@@ -1,31 +1,40 @@
 ## data_input_processing.py
 # imports
-import os
-from pathlib import Path
+# import os
+import sys
+sys.path.insert(0, "/opt/airflow/src")
+sys.path.insert(0, "/opt/airflow/src/utils")
 
+from pathlib import Path
 from datetime import datetime, timedelta
 # from airflow import DAG
-from airflow.operators.python import PythonSensor
-from airflow.sensors.filesystem import FilePatternSensor
-from airflow.operators.python import PythonOperator
+# from airflow.sensors.filesystem import FilePatternSensor
+# from airflow.operators.python import PythonOperator
+from airflow.decorators import dag, task
+from airflow.sensors.python import PythonSensor
 
-from src.A_new_file_check import new_file_check
-from src.B_ETL_text import text_etl
-from src.C_embed_text import text_embed
+from A_new_file_check import new_file_check
+from A_fetch_files import fetch_files
+from B_ETL_text import text_etl
+from C_embed_text import text_embed
 
 
 # defining paths
-DATA_INPUT = "/opt/airflow/data/input"
-DATA_LAKE = ""
-DATA_DONE = ""
+DATA_INPUT = Path("/opt/airflow/data/data_input")
+DATA_LAKE = Path("/opt/airflow/data/data_lake")
+DATA_DONE = Path("/opt/airflow/data/data_done")
+
+types_allowed = [".csv", 
+                 # ".json"
+                 ]
 
 # functions
 def _any_file_exists(**context):
-    folder = Path(DATA_INPUT)
+    folder = DATA_INPUT
     files = [str(f) for f in folder.iterdir()
-             if f.suffix.lower() in [".csv", ".json"]]
+             if f.suffix.lower() in types_allowed]
     
-    return files if files else False
+    return bool(files) #  if files else False
 
 # defining DAG
 @dag(
@@ -52,27 +61,35 @@ def data_processing_pipeline():
             mode="poke"
     )
             
-    # task 1: check content of new files 
+    # task 1: 
+    @task
+    def run_fetch_files():
+        files = fetch_files(DATA_INPUT)
+        return [str(f) for f in files]
+    
+    # task 2: check content of new files 
     @task
     def run_new_file_check(files):
-       return new_file_check(files)
+       return new_file_check(files=files, path=DATA_LAKE)
 
     # task 2: ETL text  
     @task
-    def run_text_etl(files_checked):
-        return text_etl(files_checked)
+    def run_text_etl(files):
+        return text_etl(files)
 
 
     # task 3: create embeddings from text
     @task
-    def  run_text_embed(data):
-        return text_embed(data)
+    def run_text_embed(_):
+        return text_embed()
 
     # define dependencies
-    files_checked = run_new_file_check(wait_for_file, DATA_LAKE, False)
-    run_text_etl(files_checked, path=(DATA_LAKE, DATA_DONE))
-    run_text_embed(text_etl_result)
+    fetched = run_fetch_files()
+    checked = run_new_file_check(fetched)
+    etl_text = run_text_etl(checked)
+    run_text_embed(etl_text)
     
+    wait_for_file >> fetched
 
 pipeline = data_processing_pipeline()
     

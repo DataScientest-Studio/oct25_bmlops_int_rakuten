@@ -19,9 +19,9 @@ from rich.progress import Progress
 import re
 import gc
 
-import utils.setup_helper as sh
-import src.utils.database_helper as dbh
-from utils.settings import session
+# import .setup_helper as sh
+from . import database_helper as dbh
+# from .settings import sessionS
 
 
 ##########################
@@ -34,8 +34,12 @@ def extract_product_id(filename):
 
 
 def get_mobilenet_embeddings(img_paths, batch_size=16):
-    from tensorflow.keras.applications import MobileNetV2
-    from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+    try: 
+        from tensorflow.keras.applications import MobileNetV2
+        from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+    except ImportError:
+        raise ImportError("tensorflow.keras.applications is not installed.")
+    
     base_model = MobileNetV2(weights="imagenet", 
                              include_top=False, 
                              pooling="avg")
@@ -81,51 +85,6 @@ def get_mobilenet_embeddings(img_paths, batch_size=16):
 # TEXT FUNCTION
 #########################
 
-def check_and_clean_text(df_dict, text_col=None):
-    if not text_col:
-        text_col = ["description", "designation"]
-
-    df_to_merge = {}
-
-    for name, df in df_dict.items():
-        df_clean = df.copy()
-
-        print(f"{'='*45}\n📘 CHECKING AND CLEANING: '{name}'\n{'='*45}\n")
-        for col in text_col:
-            if col not in df_clean.columns:
-                print(f"⚠️  Column '{col}' not found in {name}, skipping.\n")
-                continue
-
-            df_clean[f"is_valid_{col}"] = df_clean[col].apply(check_chars)
-            invalid_pre = df_clean.loc[~df_clean[f"is_valid_{col}"], col]
-
-            print(f"🔍 BEFORE Cleaning column '{col}' in '{name}': {len(invalid_pre)} invalid entries ({len(invalid_pre)/len(df_clean):.2%})")
-            if len(invalid_pre) > 0:
-                exemple = invalid_pre.iloc[0]
-                print("-->  Example:", exemple[:120] if isinstance(exemple, str) else exemple)
-
-            print(f"\n🧽 START Cleaning column '{col}' in '{name}'")
-            df_clean[f"clean_{col}"] = df_clean[col].apply(clean_text)
-
-            df_clean[f"is_valid_2_{col}"] = df_clean[f"clean_{col}"].apply(check_chars)
-            invalid_post = df_clean.loc[~df_clean[f"is_valid_2_{col}"], col]
-            # invalid_post = df.loc[df[f"clean_{col}"].str.contains(r"<[^>]+>|&[a-z]+;", regex=True, na=False), col]
-            print(f"\n✅ AFTER Cleaning column '{col}' in '{name}': {len(invalid_post)} invalid entries ({len(invalid_post)/len(df_clean):.2%})")
-            if len(invalid_post) > 0:
-                exemple_2 = invalid_post.iloc[0]
-                print("-->  Example:", exemple[:120] if isinstance(exemple_2, str) else exemple_2)
-
-        df_to_merge[f'{name}'] = df_clean # print()
-
-        return df_to_merge
-    
-        # try:
-        #     df_clean.to_csv(f"{DATA_PROCESSED}/{name}_clean.csv")
-        #     print(f"✅ SAVED DF '{name}_clean' successfully\n")
-        # except Exception as e:
-        #     print(f"⚠️ ERROR -- DF '{name}_clean': {e}")
-
-
 # "CLEANING" functions
 allowed_pattern = re.compile(r"^[\wÀ-ÖØ-öø-ÿ0-9\s.,;:!?%€$'\"()\-–—°/&#+]+$")
 
@@ -157,6 +116,44 @@ def clean_text(text):
                    if allowed_pattern.match(ch) or ch.isspace())
 
     return text
+
+## cleaning data (using RegEx + BeautifulSoup)
+def data_cleaning(df_dict):
+    text_col = ["description", "designation"]
+
+    df_cleaned = {}
+    for name, df in df_dict.items():
+        df_clean = df.copy()
+
+        print(f"{'='*45}\n📘 CHECKING AND CLEANING: '{name}'\n{'='*45}\n")
+        for col in text_col:
+            if col not in df_clean.columns:
+                print(f"⚠️  Column '{col}' not found in {name}, skipping.\n")
+                continue
+
+            df_clean[f"is_valid_{col}"] = df_clean[col].apply(check_chars)
+            invalid_pre = df_clean.loc[~df_clean[f"is_valid_{col}"], col]
+
+            print(f"🔍 BEFORE Cleaning column '{col}' in '{name}': {len(invalid_pre)} invalid entries ({len(invalid_pre)/len(df_clean):.2%})")
+            if len(invalid_pre) > 0:
+                exemple = invalid_pre.iloc[0]
+                print("-->  Example:", exemple[:120] if isinstance(exemple, str) else exemple)
+
+            print(f"\n🧽 START Cleaning column '{col}' in '{name}'")
+            df_clean[f"clean_{col}"] = df_clean[col].apply(clean_text)
+
+            df_clean[f"is_valid_2_{col}"] = df_clean[f"clean_{col}"].apply(check_chars)
+            invalid_post = df_clean.loc[~df_clean[f"is_valid_2_{col}"], col]
+            # invalid_post = df.loc[df[f"clean_{col}"].str.contains(r"<[^>]+>|&[a-z]+;", regex=True, na=False), col]
+            print(f"\n✅ AFTER Cleaning column '{col}' in '{name}': {len(invalid_post)} invalid entries ({len(invalid_post)/len(df_clean):.2%})")
+            if len(invalid_post) > 0:
+                exemple_2 = invalid_post.iloc[0]
+                print("-->  Example:", exemple[:120] if isinstance(exemple_2, str) else exemple_2)
+
+        df_cleaned[f'{name}'] = df_clean # print()
+    
+    return df_cleaned
+
 
 def check_latest_products(df_dict, coll_name):
     # load MongoDB
@@ -215,8 +212,11 @@ def check_latest_products(df_dict, coll_name):
 
     return need_update
 
+# -------------------------------
+# Create embeddings from text
+# -------------------------------
 
-def prepare_text_embeds(df_in):
+def prepare_embed(df_in):
     print("Start preparing df for embeddings")
     df = df_in.copy()
 
@@ -233,7 +233,11 @@ def prepare_text_embeds(df_in):
 
 def embed_text(df_in):
     print("Start creating embeddings from 'text'")
-    from sentence_transformers import SentenceTransformer
+    # lazy imports
+    try:
+        from sentence_transformers import SentenceTransformer
+    except ImportError:
+        raise ImportError("sentence_transformers is not installed.")
     
     # path = os.path.join(df_in, "df_test_embedded.csv")
     # df_pre = pd.read_csv(path)
@@ -262,4 +266,3 @@ def embed_text(df_in):
     df["text_embed"] = list(embeddings)
 
     return df
-

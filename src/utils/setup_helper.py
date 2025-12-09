@@ -15,7 +15,7 @@ from functools import wraps
 # from datetime import datetime
 # import subprocess
 # import sys
-from utils.settings import session
+from .settings import session
 
 
 def load_env_vars():
@@ -80,18 +80,18 @@ def get_paths():
             # from google.colab import drive
             raise RuntimeError("Colab environment required for --env all")
 
-        ROOT = Path(os.getenv("COLAB_ROOT"))
-        DATA = Path(os.getenv("COLAB_DATA"))
-        VENV = Path(os.getenv("COLAB_VENV"))
+        ROOT = os.getenv("COLAB_ROOT")
+        DATA = os.getenv("COLAB_DATA")
+        VENV = os.getenv("COLAB_VENV")
 
     else:
-        ROOT = Path(os.getenv("LOCAL_ROOT")).resolve()
-        DATA = Path(os.getenv("LOCAL_DATA"))
-        VENV = Path(os.getenv("LOCAL_VENV"))
+        ROOT = os.getenv("LOCAL_ROOT")
+        DATA = os.getenv("LOCAL_DATA")
+        VENV = os.getenv("LOCAL_VENV")
     
-    session.root = ROOT
-    session.data = DATA
-    session.venv = VENV
+    session.root = Path(ROOT) if ROOT else ""
+    session.data = Path(DATA) if DATA else ""
+    session.venv = Path(VENV) if VENV else ""
     session.save_session()
 
     print("Paths loaded")

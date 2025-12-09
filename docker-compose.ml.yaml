@@ -1,0 +1,35 @@
+services:
+  mlflow-postgres:
+    image: postgres:13
+    container_name: mlflow-postgres
+    environment:
+      POSTGRES_USER: mlflow
+      POSTGRES_PASSWORD: mlflow
+      POSTGRES_DB: mlflow
+    ports:
+      - "5433:5432"
+    volumes:
+      - mlflow-postgres-db-volume:/var/lib/postgresql/data
+    restart: always
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.9.2
+    container_name: mlflow
+    depends_on:
+      - mlflow-postgres
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlflow/artifacts:/mlflow/artifacts
+    environment:
+      MLFLOW_TRACKING_URI: postgresql+psycopg2://mlflow:mlflow@mlflow-postgres:5432/mlflow
+      ARTIFACT_ROOT: /mlflow/artifacts
+    command: >
+      mlflow server
+        --backend-store-uri postgresql+psycopg2://mlflow:mlflow@mlflow-postgres:5432/mlflow
+        --default-artifact-root /mlflow/artifacts
+        --host 0.0.0.0
+        --port 5000
+
+volumes:
+  mlflow-postgres-db-volume:

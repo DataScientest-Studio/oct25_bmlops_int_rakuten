@@ -6,7 +6,7 @@ import numpy as np
 
 from sklearn.neighbors import NearestNeighbors
 
-import src.utils.database_helper as dbh
+from . import database_helper as dbh
 
 
 def create_array(docs, normalize=None):
@@ -64,7 +64,7 @@ def create_faiss_idx(array, path):
     print("FAISS index locally saved.")
 
 def save_faiss_to_mongo(path: str, db_name: str=None):
-    db, _, _, _ = dbh.setup_mongodb(db_name=db_name)
+    db, _, _, _ = dh.setup_mongodb(db_name=db_name)
     fs = gridfs.GridFS(db)
 
     f_path = path / "faiss_index.bin"
@@ -74,7 +74,7 @@ def save_faiss_to_mongo(path: str, db_name: str=None):
         return file_id
 
 def load_faiss_from_mongo(db_name, filename="faiss_index"):
-    db, _, _, _ = dbh.setup_mongodb(db_name=db_name)
+    db, _, _, _ = dh.setup_mongodb(db_name=db_name)
     fs = gridfs.GridFS(db)
 
     file_data = fs.find_one({"filename": filename})

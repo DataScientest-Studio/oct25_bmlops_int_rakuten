@@ -3,9 +3,11 @@
 import os
 import time
 import numpy as np
+import pandas as pd
 from pymongo import UpdateOne
+from datetime import datetime
 
-import src.utils.database_helper as dbh
+from . import database_helper as dbh
 
 ### 
 def list_products(df):
@@ -77,3 +79,57 @@ def random_seed_numpy():
     return seed
 
 
+def check_latest_products(df_dict, coll_name, days=30):
+    # load MongoDB
+    _, _, coll_dict = dbh.setup_mongodb()
+    collection = coll_dict.get(coll_name)
+
+    # name_collection = None
+    # for key, value in coll_dict.items():
+    #     if key == coll_name:
+    #         name_collection = value
+    
+    cols_needed = ["productid",
+                   "upload_time (image)",
+                   "upload_time (text)"]
+    
+    if collection is None:
+        print(f"⚠️ No collection '{coll_name}' found in db")
+        return None
+
+    df_db = dbh.load_cursor(coll_name, cols_needed)
+
+    if not df_db:
+        return None
+
+    for col in ["upload_time (image)", "upload_time (text)"]:
+        if col in df_db.columns:
+            df_db[col] = pd.to_datetime(df_db[col], errors='coerce')
+        
+    cutoff = pd.Timestamp.now() - pd.Timedelta(days=days)
+    update_image = {}
+    update_text = {}
+
+    for name, df in df_dict.items():
+        if "productid" not in df.columns:
+            print(f"⚠️ DataFrame '{name}' has no 'productid' column → skipped.")
+            continue
+
+        missing_products = set(df["productid"]) - set(df_db["product_id"])
+
+        merged = df.merge(df_db, on="productid", how="left")
+
+        need_img = merged[
+            (merged["upload_time (image)"].isna()) | 
+            (merged["upload_time (image)"] < cutoff)
+            ]["productid"].tolist()
+
+        need_txt = merged[
+            (merged["upload_time (text)"].isna()) | 
+            (merged["upload_time (text)"] < cutoff)
+            ]["productid"].tolist()
+
+        update_image[name] = sorted(set(need_img) | missing_products)
+        update_text[name] = sorted(set(need_txt) | missing_products)
+
+    return update_text, update_image

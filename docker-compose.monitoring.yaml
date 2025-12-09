@@ -1,0 +1,29 @@
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: always
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    restart: always
+
+  evidently:
+    image: evidentlyai/evidently:latest
+    container_name: evidently
+    ports:
+      - "8000:8000"
+    command: evidently ui --host 0.0.0.0 --port 8000
+    restart: always
+
+volumes:
+  grafana-data:
