@@ -8,7 +8,6 @@ from datetime import datetime
 
 from . import setup_helper as sh
 
-
 # 
 def load_cursor(coll_name, cols_needed):
     
@@ -110,11 +109,12 @@ def load_collection(coll_name):
     
     collection = None
     for key, value in coll_dict.items():
+        print(f"[DEBUG]:\nkey --> {key}\nvalue --> {value}")
         if key == coll_name:
             collection = value
         
     if collection is None:
-        print(f"Collection {coll_name} could not be found.")
+        print(f"Collection '{coll_name}' could not be found.")
         return None
     
     return collection
@@ -143,65 +143,92 @@ def upload_embeds(df, coll_name):
 
 
 
-def upload_data_mongoDB(dfs, coll_name="product"):
+def upload_text_data(df, coll_name="products"):
     """
     Docstring for upload_data_mongoDB
     
-    :param dfs: Description
-    :param names: Description
+    :param df: Description
     :param coll_name: Description
     """
     # load MongoDB collection
     collection = load_collection(coll_name)
 
     # loading data into MongoDB
-    now_db = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     allowed_cols = ['_id', 'prdtypecode', 
                     'designation', 'clean_designation',
                     'description', 'clean_description',
                     'productid', 'imageid',
                     "upload_time (text)",
-                    "upload_time (image)"]
+                    "upload_time (image)"
+                    ]
 
-    if not names:
-        names = ["df_train", "df_test"]
-
-        for name, df in zip(names, 
-                            dfs):
-            # df = pd.read_csv(f"{DATA_PROCESSED}/{f}_clean.csv", index_col=0)
-            cols = [col for col in allowed_cols if col in df.columns]
+    existing = [col for col in allowed_cols if col in df.columns]
             
-            data = df[cols].copy()
-            data["source"] = name
-            data["upload_time (text)"] = now_db
+    data = df[existing].copy()
+    data["upload_time (text)"] = now
 
-            records = []
-            records.append(UpdateOne(
+    records = []
+    records.append(UpdateOne(
                             {"productid": data["productid"]},
                             {"$set": data,
                             "$currentDate": {"lastModified": True }},
                             upsert=True
                             ))
 
-            collection.bulk_write(records, ordered=False)
-            # records = data.to_dict(orient="records")
-            # collection.insert_many(records)
-            print(f"Inserted {len(records)} records from '{name}'.\n\t--> cols: {cols}\n")
+    collection.bulk_write(records, ordered=False)
+    print(f"Inserted {len(records)} records .\n\t--> cols: {existing}\n")
 
-        print(f"\n{'='*60}\n--- DB CHECK AFTER DATA LOAD ---\n{'='*60}")
-        count = collection.count_documents({})
-        print(f"\nNumber of entries:\t{count}") #, collection.count_documents({}))
+    print(f"\n{'='*60}\n--- DB CHECK AFTER DATA LOAD ---\n{'='*60}")
+    count = collection.count_documents({})
+    print(f"\nNumber of entries:\t{count}") #, collection.count_documents({}))
 
-        if count > 0:
-            print("\nExemple document:")
-            doc = collection.find_one()
-            for key, value in doc.items():
-                print(f"{key}:\t{value}")
-        else:
-            print("\nNo entries found in the collection.")
+    if count > 0:
+        print("\nExemple document:")
+        doc = collection.find_one()
+        for key, value in doc.items():
+            print(f"{key}:\t{value}")
+
+    # if not names:
+    #     names = ["df_train", "df_test"]
+
+    #     for name, df in zip(names, 
+    #                         dfs):
+    #         # df = pd.read_csv(f"{DATA_PROCESSED}/{f}_clean.csv", index_col=0)
+            
+    #     else:
+    #         print("\nNo entries found in the collection.")
     
-    else: 
-        print("Function probably not yet suitable for that input. Please check.")
-        # return None 
+    # else: 
+    #     print("Function probably not yet suitable for that input. Please check.")
+    #     # return None 
  
+
+def upload_img_metadata(df, source_name, coll_name, now):
+    ops = []
+    for _, row in df.iterrows():
+        doc = row.to_dict()
+        doc["source"] = source_name
+        doc["upload_time"] = now
+
+        ops.append(UpdateOne(
+                {"product_id": doc["product_id"], 
+                 "path": doc["path"]},
+                {"$set": doc,
+                "$currentDate": {"lastModified": True }},
+                upsert=True
+                            ))
+
+    if len(ops) == 0:
+        print("No metadata to add")
+
+    collection = load_collection(coll_name)
+    
+    collection.bulk_write(ops)
+    print(f"Inserted/Updated {len(ops)} documents from {source_name}")
+    
+    count = collection.count_documents({})
+    print("Total documents:", count)
+    print("\nExample document:")
+    print(collection.find_one())
