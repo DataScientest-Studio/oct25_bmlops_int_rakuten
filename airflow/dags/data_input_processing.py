@@ -13,10 +13,12 @@ from datetime import datetime, timedelta
 from airflow.decorators import dag, task
 from airflow.sensors.python import PythonSensor
 
-from A_new_file_check import new_file_check
 from A_fetch_files import fetch_files
+from A_new_file_check import new_file_check
 from B_ETL_text import text_etl
+# from B_ETL_image import image_etl
 from C_embed_text import text_embed
+# from C_embed_image import image_embed
 
 
 # defining paths
@@ -49,7 +51,6 @@ def _any_file_exists(**context):
     }
 )
 
-
 def data_processing_pipeline():
 
     # sensor checks for new files 
@@ -64,30 +65,49 @@ def data_processing_pipeline():
     # task 1: 
     @task
     def run_fetch_files():
-        files = fetch_files(DATA_INPUT)
+        files = fetch_files(src_path=DATA_INPUT, 
+                            dst_path=DATA_LAKE)
         return [str(f) for f in files]
     
     # task 2: check content of new files 
     @task
     def run_new_file_check(files):
-       return new_file_check(files=files, path=DATA_LAKE)
+        check_result = new_file_check(f_names=files, 
+                                      folder=DATA_LAKE)
+        return check_result
 
-    # task 2: ETL text  
+    # task 3-A: ETL text  
     @task
-    def run_text_etl(files):
-        return text_etl(files)
+    def run_text_etl(files, check_result):
+        return text_etl(f_names=files, 
+                        src_folder=DATA_LAKE, 
+                        dst_folder=DATA_DONE,
+                        product_dict=check_result)
 
+    # task 3-B: ETL image  
+    # @task
+    # def run_image_etl(check_result:
+    #     return image_etl(check_result)
 
-    # task 3: create embeddings from text
+    # task 4-A: create embeddings from text
     @task
     def run_text_embed(_):
         return text_embed()
 
+    # task 4-B: create embeddings from text
+    # @task
+    # def run_imagew_embed(_):
+    #     return image_embed()
+
     # define dependencies
     fetched = run_fetch_files()
-    checked = run_new_file_check(fetched)
-    etl_text = run_text_etl(checked)
+    check_result = run_new_file_check(fetched)
+
+    etl_text = run_text_etl(fetched, check_result)
+    # etl_image = run_image_etl(check_result)
+    
     run_text_embed(etl_text)
+    # run_image_embed(etl_image)
     
     wait_for_file >> fetched
 
