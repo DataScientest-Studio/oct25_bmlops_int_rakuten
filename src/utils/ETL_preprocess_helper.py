@@ -1,312 +1,165 @@
-##
-import warnings
-from bs4 import MarkupResemblesLocatorWarning
-
-# must be executed before importing or using BeautifulSoup to exclude warnings in output
-warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
-warnings.filterwarnings("ignore", module="bs4")
-warnings.filterwarnings("ignore", module="lxml")
-warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
-
-from bs4 import BeautifulSoup
-import html
-import unicodedata
-import pandas as pd
+## file_helper.py
+# imports
+import os
+from pathlib import Path
+from datetime import datetime
+import pickle
+import shutil
 import numpy as np
-from PIL import Image
-from rich.progress import Progress
-
-import re
-import gc
+import pandas as pd
+import zipfile
 
 
-# import .setup_helper as sh
-from . import database_helper as dbh
-# from .settings import session
+from . import setup_helper as sh
+from . import data_helper as dh
+
+##########
+def move_file(file: Path, target_folder: Path):
+    src = Path(file)
+
+    target_folder.mkdir(parents=True, exist_ok=True)
+
+    dst = Path(target_folder) / src.name
+    if dst.exists():
+        dst.unlink()
+
+    shutil.move(str(file), str(dst))
+    return dst
 
 
-##########################
-# IMAGE FUNCTION
-#########################
-
-def extract_product_id(filename):
-    match = re.search(r"product_(\d+)", filename)
-    return match.group(1) if match else None
-
-
-def extract_metadata(image_dir, output_name):
-    records = []
-    for img_file in image_dir.glob("*.jpg"):
-        try:
-            with Image.open(img_file) as img:
-                width, height = img.size
-
-            product_id = extract_product_id(img_file.name)
-            if not product_id:
-                print(f"No product ID found for {img_file.name}")
-                continue
-
-            records.append({
-                "product_id": product_id,
-                "path": str(img_file),
-                "width": width,
-                "height": height
-            })
-
-        except Exception as e:
-            print(f"Error processing {img_file.name}: {e}")
-
-    df = pd.DataFrame(records)
-    df.to_csv(output_name, index=False)
-    return df
-
-
-
-def get_mobilenet_embeddings(img_paths, batch_size=16):
-    try: 
-        from tensorflow.keras.applications import MobileNetV2
-        from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
-    except ImportError:
-        raise ImportError("tensorflow.keras.applications is not installed.")
+def unzip_images(src_folder, extract_dir):
+    zip_file = Path(src_folder) / "images.zip"
     
-    base_model = MobileNetV2(weights="imagenet", 
-                             include_top=False, 
-                             pooling="avg")
-    preprocess = preprocess_input
+    img_files, img_folders = list_files_and_folders(extract_dir)
     
-    embeddings = []
-    n = len(img_paths)
+    if len(img_files) == 0:
+        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+            zip_ref.extractall(extract_dir)
+
+        files_unzipped, folders_unzipped = list_files_and_folders(extract_dir)
+
+        print(f"Unzipped {len(files_unzipped)} files and {folders_unzipped} folders to:", extract_dir)
+        return files_unzipped, folders_unzipped
+
+    else:
+        print(f"No file unzipped. Folder contains already {len(img_files)} files and {img_folders} folders .")
+        return img_files, img_folders
+
+def list_files_and_folders(path):
+    files = [f for f in path.iterdir() if f.is_file()]
+    folders = [f for f in path.iterdir() if f.is_dir()]
+
+    return files, folders
+
+def save_pickle(file, path, folder=None):
+    # now = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    for i in range(0, n, batch_size):
-        batch_paths = img_paths[i:i+batch_size]
-        batch_arrays = []
-        
-        for path in batch_paths:
-            try:
-                img = Image.open(path).convert("RGB").resize((224, 224))
-                img_array = np.array(img, dtype=np.float32)
-                batch_arrays.append(img_array)
-            except Exception as e:
-                print(f"Fehler bei {path}: {e}")
-        
-        if not batch_arrays:
-            continue
-        
-        batch_arrays = np.stack(batch_arrays, axis=0)
-        batch_arrays = preprocess(batch_arrays)
-        
-        
-        batch_features = base_model.predict(batch_arrays, verbose=0)
-        
-        
-        batch_features = batch_features / np.linalg.norm(batch_features, axis=1, keepdims=True)
-        
-        embeddings.extend(batch_features)
-        
-        
-        del batch_arrays
-        del batch_features
-        gc.collect()
-    
-    return embeddings
+    if not folder:
+        file_path = os.path.join([path, ".pkl"])
 
-##########################
-# TEXT FUNCTION
-#########################
+    else:
+        file_path = os.path.join([folder, path, ".pkl"])
 
-# "CLEANING" functions
-allowed_pattern = re.compile(r"^[\wÀ-ÖØ-öø-ÿ0-9\s.,;:!?%€$'\"()\-–—°/&#+]+$")
-
-def check_chars(text):
-    if not isinstance(text, str) or not text.strip():
-        return True
-        
-    return bool(allowed_pattern.match(text))
-
-def clean_text(text):
-    if not isinstance(text, str):
-        return ""
-
-    # remove HTML
-    text = BeautifulSoup(text, "lxml").get_text(separator=" ")
-
-    # decode HTML entities (&amp; -> &)
-    text = html.unescape(text)
-
-    # normalise unicode (e.g. consistent „é“)
-    text = unicodedata.normalize("NFKC", text)
-
-    # remove steering signs, multiple spaces
-    text = re.sub(r"[\r\n\t]+", " ", text)
-    text = re.sub(r"\s{2,}", " ", text).strip()
-
-    # keep only allowed chars
-    text = "".join(ch for ch in text 
-                   if allowed_pattern.match(ch) or ch.isspace())
-
-    return text
-
-## cleaning data (using RegEx + BeautifulSoup)
-def data_cleaning(df_dict):
-    text_col = ["description", "designation"]
-
-    df_cleaned = {}
-    for name, df in df_dict.items():
-        df_clean = df.copy()
-
-        print(f"{'='*45}\n📘 CHECKING AND CLEANING: '{name}'\n{'='*45}\n")
-        for col in text_col:
-            if col not in df_clean.columns:
-                print(f"⚠️  Column '{col}' not found in {name}, skipping.\n")
-                continue
-
-            df_clean[f"is_valid_{col}"] = df_clean[col].apply(check_chars)
-            invalid_pre = df_clean.loc[~df_clean[f"is_valid_{col}"], col]
-
-            print(f"🔍 BEFORE Cleaning column '{col}' in '{name}': {len(invalid_pre)} invalid entries ({len(invalid_pre)/len(df_clean):.2%})")
-            if len(invalid_pre) > 0:
-                exemple = invalid_pre.iloc[0]
-                print("-->  Example:", exemple[:120] if isinstance(exemple, str) else exemple)
-
-            print(f"\n🧽 START Cleaning column '{col}' in '{name}'")
-            df_clean[f"clean_{col}"] = df_clean[col].apply(clean_text)
-
-            df_clean[f"is_valid_2_{col}"] = df_clean[f"clean_{col}"].apply(check_chars)
-            invalid_post = df_clean.loc[~df_clean[f"is_valid_2_{col}"], col]
-            # invalid_post = df.loc[df[f"clean_{col}"].str.contains(r"<[^>]+>|&[a-z]+;", regex=True, na=False), col]
-            print(f"\n✅ AFTER Cleaning column '{col}' in '{name}': {len(invalid_post)} invalid entries ({len(invalid_post)/len(df_clean):.2%})")
-            if len(invalid_post) > 0:
-                exemple_2 = invalid_post.iloc[0]
-                print("-->  Example:", exemple[:120] if isinstance(exemple_2, str) else exemple_2)
-
-        df_cleaned[f'{name}'] = df_clean # print()
-    
-    return df_cleaned
-
-
-
-def filter_rename_columns(df, cols_allowed, rename: dict=None):
-    allowed = [col for col in df.columns if col in cols_allowed]
-
-    data = df[allowed].copy()
-    
-    if rename:
-        for key, value in rename:
-            if key in allowed:
-                data = data.columns.rename({key: value})
-
-    return data
-
-
-
-def check_latest_products(df_dict, coll_name):
-    # load MongoDB
-    _, _, coll_dict = dbh.setup_mongodb()
-    
-    collection = None
-    for key, value in coll_dict.items():
-        if key == coll_name:
-            collection = value
-    
-    cols_needed = ["productid",
-                   "upload_time (image)",
-                   "upload_time (text)"]
-    
-    if collection is None:
-        print(f"⚠️ No collection '{coll_name}' found in db")
-        return None
-
-    df_db = dbh.load_cursor(collection, cols_needed)
-
-    time_cols = ["upload_time (image)", "upload_time (text)"]
-
-    for col in df_db.columns:
-        if col in time_cols:
-            df_db[col] = pd.to_datetime(df_db[col], errors='coerce')
-
-    to_update = {}
-    for name, df in df_dict.items():
-        cutoff = pd.Timestamp.now() - pd.Timedelta(days=30)
-        df["now"] = pd.to_datetime(df["now"], errors='coerce')
-
-        old_image = []
-        old_text = []
-        if "upload_time (image)" in df.columns:
-            old_image = df_db[df_db["upload_time (image))"] < cutoff]["productid"].tolist()    
-        if "upload_time (text)" in df.columns:
-            old_text = df_db[df_db["upload_time (text))"] < cutoff]["productid"].tolist()    
-
-        # outdated_image = df[df["upload_time (image))"] < df_db["upload_time (image))"]]["productid"].tolist()    
-        # outdated_text = df[df["upload_time (text))"] < df_db["upload_time (text)"]]["productid"].tolist()    
-        
-        need_update = set(old_image + old_text 
-                          # + outdated_image + outdated_text
-                          )
-        if need_update:
-            to_update[name] = list(need_update) 
-            print(f"Updates needed for '{name}': {len(need_update)} products.")
-        else:
-            print(f"No updates needed for '{name}'.")
-
-    need_update = {}
-    for name, products in to_update.items():
-        df = df_dict[f"{name}"]
-        df_reduced = df[df["productid"].isin(products)]
-        need_update[f"{name}"] = df_reduced 
-
-    return need_update
-
-# -------------------------------
-# Create embeddings from text
-# -------------------------------
-
-def prepare_embed(df_in):
-    print("Start preparing df for embeddings")
-    df = df_in.copy()
-
-    # prepare df for embedding
-    df["text"] = (
-        df["clean_designation"].fillna("").astype(str).str.strip()
-        + " "
-        + df["clean_description"].fillna("").astype(str).str.strip()
-                ).str.strip()
-            
-    print("created column 'text' from 'clean_designation' and 'clean_description'.")
-    return df
-
-
-def embed_text(df_in):
-    print("Start creating embeddings from 'text'")
-    # lazy imports
     try:
-        from sentence_transformers import SentenceTransformer
-    except ImportError:
-        raise ImportError("sentence_transformers is not installed.")
+        # save as pickle
+        with open(file_path, "wb") as f:
+            pickle.dump(file, f)
+        
+        print("[SUCCESS] File saved")
+    except:
+        print("[ERROR] Saving file as pkl.")
+
+
+def merge_dfs(dict_df: dict):
+    """
+    Docstring for merge_dfs
     
-    # path = os.path.join(df_in, "df_test_embedded.csv")
-    # df_pre = pd.read_csv(path)
-    # df = df_pre.head(10).copy()
-    df = df_in.copy()
+    :param dict_df: Description
+    """
+    ## merge data frames
+    dfs = list(dict_df.values()) 
     
-    ## using SBERT for text embeddings
-    model = SentenceTransformer('all-MiniLM-L6-v2')
-    texts = df["text"].tolist()
+    df_merged = dfs[0]
+    if len(dfs) > 1:
+        for df in dfs[1:]:
+            df_merged = df_merged.merge(df, 
+                                        on='productid',
+                                        how='outer')
 
-    embeddings = []
-    batch_size = 256
+    sh.log_header(f"CHECK MERGED DF")
+    print("SHAPE:\t", df_merged.shape)
+    print("INFO\n", sh.info_as_string(df_merged))
+    print(f"HEAD:\n{df_merged.head(5)}\n")
 
-    with Progress() as progress:
-        task = progress.add_task(f"Start embedding with {len(texts)} texts...", total=len(texts))
-        for i in range(0, len(texts), batch_size):
-            batch = texts[i:i+batch_size]
-            emb = model.encode(batch, convert_to_numpy=True, normalize_embeddings=True)
-            embeddings.append(emb)
-            progress.update(task, advance=len(batch))
+    return df_merged
+    
 
-    embeddings = np.vstack(embeddings)
+def column_check(df, cols=None):
+    if not cols:
+        cols = ["designation",
+                "description",
+                "productid",
+                "imageid"]
+    
+    existing = [c for c in cols if c in df.columns]
+    missing = [c for c in cols if c not in df.columns]
+    
+    print(f"[INFO] Missing columns: {missing or None}")
 
-    print(f"Finished creating embeddings\n--> embeddings shape:\t", embeddings.shape)
+    return df[existing].copy 
 
-    df["text_embed"] = list(embeddings)
+def data_preview(f_names=None, folder=None):
+    """
+    Docstring for data_preview
+    
+    :param folder: Description
+    :param f_names: Description
+    """
+    ## data preview
+    if not f_names:
+        f_names = ["X_test_update", "X_train_update", "Y_train_CVw08PX"]
 
-    return df
+    if not folder:
+        print("No folder path provided")
+
+    df_dict = load_dfs(f_names, folder)
+
+    if len(df_dict) == 0:
+        return None 
+    
+    else:
+        for name, df in df_dict.items():
+            sh.log_header(f"EDA RAW DATA ({name})")
+            # print(f"\n{'='*30}\n--- EDA RAW DATA '{f}' ---") 
+            print("SHAPE:\t", df.shape)
+            print("INFO\n", sh.info_as_string(df))
+            print(f"HEAD:\n{df.head(5)}\n")
+
+        return df_dict
+
+def load_dfs(f_names, folder=None):
+    df_dict = {}
+    
+    if isinstance(f_names, (str, Path)):
+        f_names = [f_names]
+        
+    for f in f_names:
+        if folder:
+            f_path = os.path.join(folder, f)
+        else:
+            f_path = Path(f)
+
+        try:  
+            df = pd.read_csv(f_path)            
+            df_dict[f] = df
+            
+        except Exception as e:
+            print(f"⚠️ Loading {f} from {f_path}: Error occured:\n{e}")
+        
+    return df_dict
+
+
+
+
+
+    
