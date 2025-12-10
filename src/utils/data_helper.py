@@ -89,6 +89,9 @@ def check_latest_products(df_dict, coll_name, days=30):
     #     if key == coll_name:
     #         name_collection = value
     
+    update_text = None
+    update_image = None
+
     cols_needed = ["productid",
                    "upload_time (image)",
                    "upload_time (text)"]
@@ -99,8 +102,9 @@ def check_latest_products(df_dict, coll_name, days=30):
 
     df_db = dbh.load_cursor(coll_name, cols_needed)
 
-    if not df_db:
-        return None
+    if df_db is None:
+        return {"txt_update": "all", 
+                "img_update": "all"}
 
     for col in ["upload_time (image)", "upload_time (text)"]:
         if col in df_db.columns:
@@ -132,4 +136,7 @@ def check_latest_products(df_dict, coll_name, days=30):
         update_image[name] = sorted(set(need_img) | missing_products)
         update_text[name] = sorted(set(need_txt) | missing_products)
 
-    return update_text, update_image
+    return {
+        "txt_update": update_text,
+        "img_update": update_image
+    }
