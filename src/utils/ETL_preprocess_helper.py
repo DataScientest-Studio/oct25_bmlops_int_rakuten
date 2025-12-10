@@ -19,9 +19,10 @@ from rich.progress import Progress
 import re
 import gc
 
+
 # import .setup_helper as sh
 from . import database_helper as dbh
-# from .settings import sessionS
+# from .settings import session
 
 
 ##########################
@@ -31,6 +32,34 @@ from . import database_helper as dbh
 def extract_product_id(filename):
     match = re.search(r"product_(\d+)", filename)
     return match.group(1) if match else None
+
+
+def extract_metadata(image_dir, output_name):
+    records = []
+    for img_file in image_dir.glob("*.jpg"):
+        try:
+            with Image.open(img_file) as img:
+                width, height = img.size
+
+            product_id = extract_product_id(img_file.name)
+            if not product_id:
+                print(f"No product ID found for {img_file.name}")
+                continue
+
+            records.append({
+                "product_id": product_id,
+                "path": str(img_file),
+                "width": width,
+                "height": height
+            })
+
+        except Exception as e:
+            print(f"Error processing {img_file.name}: {e}")
+
+    df = pd.DataFrame(records)
+    df.to_csv(output_name, index=False)
+    return df
+
 
 
 def get_mobilenet_embeddings(img_paths, batch_size=16):
@@ -153,6 +182,21 @@ def data_cleaning(df_dict):
         df_cleaned[f'{name}'] = df_clean # print()
     
     return df_cleaned
+
+
+
+def filter_rename_columns(df, cols_allowed, rename: dict=None):
+    allowed = [col for col in df.columns if col in cols_allowed]
+
+    data = df[allowed].copy()
+    
+    if rename:
+        for key, value in rename:
+            if key in allowed:
+                data = data.columns.rename({key: value})
+
+    return data
+
 
 
 def check_latest_products(df_dict, coll_name):
