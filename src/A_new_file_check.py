@@ -32,22 +32,6 @@ def new_file_check(f_names=None, folder=None):
         print("Files cannot be found. Please check the input.")
         return None
         
-    update_text, update_image = dh.check_latest_products(df_dict, "products")
-    
-    if update_text and update_image:
-        print("⚠️ Database needs an update.")
-        if update_text:
-            print("⚠️ Text columns are not up-to-date")
-        
-        if update_image:
-            print("⚠️ Image columns are not up-to-date")
-        
-        return update_text, update_image
-    
-    else: 
-        print("✅ Database is up-to-date")
-        return None, None
-    
-        
-        
-        
+    need_update = dh.check_latest_products(df_dict, "products")
+
+    return need_update
