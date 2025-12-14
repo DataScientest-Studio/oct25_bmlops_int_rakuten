@@ -1,0 +1,66 @@
+[project]
+name = "recommsystem-rakuten"
+version = "0.1.0"
+description = "Content-based recommender system for Rakuten dataset"
+readme = "README.md"
+requires-python = ">=3.10"
+# (1) Basis: Leicht + unverzichtbar + schnell installierbar
+dependencies = [
+    "pandas>=2.3.3",
+    "numpy>=1.26",
+    "tqdm>=4.67.1",
+    "click>=8.3.1",
+    "pymongo",
+    "beautifulsoup4",
+    "python-dateutil",
+    "pytz",
+    "psutil",
+    "lxml>=5.0",
+    "Pillow>=10.0",
+    "simplejson",
+    "dotenv>=0.9.9",
+    "pylance>=0.39.0",
+    "ruff>=0.14.7",
+    "tensorflow>=2.20.0",
+    "sentence-transformers>=5.1.2",
+    "tf-keras>=2.20.1",
+    "faiss-cpu>=1.13.0",
+    "pip>=25.3",
+]
+
+[dependency-groups]
+# (2) MLOps + klassische ML: mittel-schwer, aber nicht TF
+mlops = [
+    "mlflow>=3.6.0",
+    "scikit-learn>=1.7.2",
+    "scipy>=1.10",
+]
+
+# (3) Heavy: langsame Builds + C-Bibliotheken + GPU/CPU-Monster
+heavy = [
+    "tensorflow>=2.20.0",
+    "faiss-cpu>=1.13",
+    "sentence-transformers>=5.1.2",
+]
+
+# (4) Developer tooling
+dev = [
+    "pytest",
+    "matplotlib>=3.7",
+    "ipykernel",
+    "sympy",
+    "Pygments",
+    "nest-asyncio",
+    "jedi",
+]
+
+[tool.ruff]
+line-length = 100
+extend-select = ["I", "N", "UP"]  # Import sorting + modernizations
+
+[tool.ruff.lint]
+ignore = ["E501"]  # ignores 'line too long' 
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

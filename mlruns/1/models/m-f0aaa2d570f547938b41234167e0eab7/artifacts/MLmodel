@@ -1,0 +1,23 @@
+artifact_path: file:C:/Users/User/Desktop/MyMLOps/mlruns/1/models/m-f0aaa2d570f547938b41234167e0eab7/artifacts
+flavors:
+  python_function:
+    artifacts:
+      model_dir:
+        path: artifacts\knn_model
+        uri: C:\Users\User\Desktop\MyMLOps\mlruns\1\c7a5f37b39314b168a0a6aa41f33c3a1\artifacts\knn_model
+    cloudpickle_version: 3.1.2
+    code: null
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.pyfunc.model
+    python_model: python_model.pkl
+    python_version: 3.12.6
+    streamable: false
+mlflow_version: 3.7.0
+model_id: m-f0aaa2d570f547938b41234167e0eab7
+model_size_bytes: 1353626
+model_uuid: m-f0aaa2d570f547938b41234167e0eab7
+prompts: null
+run_id: c7a5f37b39314b168a0a6aa41f33c3a1
+utc_time_created: '2025-12-12 10:08:29.700100'

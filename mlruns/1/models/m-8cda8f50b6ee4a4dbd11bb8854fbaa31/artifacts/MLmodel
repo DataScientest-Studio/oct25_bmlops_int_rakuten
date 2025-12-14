@@ -1,0 +1,23 @@
+artifact_path: file:C:/Users/User/Desktop/MyMLOps/mlruns/1/models/m-8cda8f50b6ee4a4dbd11bb8854fbaa31/artifacts
+flavors:
+  python_function:
+    artifacts:
+      model_dir:
+        path: artifacts\20251211_121117_content_RecomSys
+        uri: C:\Users\User\Desktop\MyMLOps\data\models\20251211_121117_content_RecomSys
+    cloudpickle_version: 3.1.2
+    code: null
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.pyfunc.model
+    python_model: python_model.pkl
+    python_version: 3.12.6
+    streamable: false
+mlflow_version: 3.7.0
+model_id: m-8cda8f50b6ee4a4dbd11bb8854fbaa31
+model_size_bytes: 1353626
+model_uuid: m-8cda8f50b6ee4a4dbd11bb8854fbaa31
+prompts: null
+run_id: 2b7e5d416c9f4f27aff877e218746d05
+utc_time_created: '2025-12-11 11:11:17.837224'
