@@ -2,7 +2,7 @@
 # from PIL import Image
 # import pandas as pd
 # import os
-# from datetime import datetime
+from datetime import datetime
 # from pymongo import UpdateOne
 
 # from utils.settings import session
@@ -14,152 +14,113 @@
 # imports 
 from pathlib import Path
 
-import utils.ETL_preprocess_helper as eph 
+import utils.file_helper as fh
+import utils.ETL_preprocess_helper as eph
 import utils.database_helper as dbh 
-import utils.file_helper as fh 
-import utils.setup_helper as sh 
-import utils.data_helper as dh 
-from utils.settings import session 
 
-def image_etl(f_names=None, folder=None):
-    # if not files:
-    #     files = new_file_check()
+# import utils. 
+# import utils.
+# import utils.
+# import utils.setup_helper as sh 
+# import utils.data_helper as dh 
+# from utils.settings import session 
 
-    if not f_names:
-        print("No file paths were passed as input.")
-        return None
-    
-    if not folder:
-        # load env variables from .env and .env.session
-        sh.load_env_vars()
+def image_etl(img_path, dst_folder, product_dict=None):
+    update = product_dict["img_update"]
 
-        # load paths
-        sh.get_paths()
-        DATA = session.data 
-        
-        DATA_LAKE = Path(DATA) / "data_lake"
-        DATA_LAKE.mkdir(parents=True, exist_ok=True)
-
-        DATA_DONE = Path(DATA) / "data_done"
-        DATA_DONE.mkdir(parents=True, exist_ok=True)
-
-        # DATA_ERROR = DATA / "data_error"
-        # DATA_ERROR.mkdir(parents=True, exist_ok=True)
-    # else:
-    #     DATA_LAKE, DATA_DONE = path
-
-    # workflow  
-    df_dict = fh.data_preview(f_names, DATA_LAKE)
-    if not df_dict:
-        print("Files cannot be found. Please check the input.")
+    if not update:
+        print("✅ All image columns are up-to-date or ⚠️ no dict was passed as input.")
         return None
         
-    dfs_to_update = dh.check_latest_products(df_dict, "products")
-    if not dfs_to_update:
-        print("✅ Database is up-to-date")
-        return None
-    
-    cleaned_dfs = eph.clean_text(dfs_to_update)
-    dfs = fh.merge_dfs(cleaned_dfs)
-    if not dfs:
-        return None
-                
-    dbh.upload_data_mongoDB(dfs) 
-                
+    # defining paths + configuration
+    folder = Path(img_path)
+    folder.mkdir(parents=True, exist_ok=True)
 
+    extract_dir = folder / "unzipped_images"
+
+    dst_folder = Path(dst_folder)
+    dst_folder.mkdir(parents=True, exist_ok=True)
+
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # img_dfs = {}
+    # for df_name, df in update.items():
+    #     for f_name, product_id in product_dict.items():
+    #         if df_name == f_name:
+    #             img_dfs[f_name] = df[df["productid"].isin(product_id)].copy()
+    
+    ## workflow  
+    # (1) unzip images
+    f_names = update["img_files"] if "img_files" in update else []
+    if not f_names or len(f_names) == 0:
+        print("No image zip files to process.")
+        return
+    
+    zip_files = [f for f in f_names if Path(f).suffix.lower() == ".zip"]
+    result = fh.unzip_images(f_names=zip_files, extract_dir=extract_dir)
+
+    if result.status is fh.ExtractStatus.SKIPPED:
+        print("Skipping unzip – 'extract_dir' already contains other files and/or folders.")
+        return
+
+    # (2) extract unzipped files (e.g. metadata)
+    files_unzip = result.files if result.files else []
+    csv_files_unzip = [f for f in files_unzip if f.suffix.lower() == ".csv"]
+    other_files_unzip = [f for f in files_unzip if f.suffix.lower() != ".csv"]
+
+    print(f"Unzipped files: found {len(files_unzip)} files")
+    print(f"\tcsv --> {len(csv_files_unzip)}")
+    print(f"\tnon-csv --> {len(other_files_unzip)}")   # {len(other_files)} non-csv files.")
+
+    folders = result.folders if result.folders else []
+
+    metadata = {}
+    other_files = {}
+    if len(folders) > 0:
+        folder_names = [f.name for f in folders if Path(f).is_dir()]
+
+        for name, folder in zip(folder_names, folders):
+            files = [f for f in folder.iterdir() if f.is_file()] #  result.files if result.files else []
+            csv_files = [f for f in files if f.suffix.lower() == ".csv"]
+            other_files = [f for f in files if f.suffix.lower() != ".csv"]
+            
+            # print(f"Folder '{name}': found {len(files)} files (csv: {len(csv_files)};\tnon-csv: {len(other_files)})   {len(other_files)} non-csv files.")
+
+            print(f"Folder '{name}': found {len(files)} files")
+            print(f"\tcsv --> {len(csv_files)}; considered as metadata, thus saved locally")
+            print(f"\tnon-csv --> {len(other_files)}") 
+
+            save_path = dst_folder / f"{now}_metadata_{name}.csv"
+            df = eph.extract_metadata(folder,  save_path)
+
+            metadata[name] = df
+            other_files[name] = other_files
+
+    if len(csv_files_unzip) > 0:
+        save_path = dst_folder / f"{now}_metadata_images.csv"
+        df = eph.extract_metadata(folder,  save_path)
+
+        metadata["csv_files_unzip"] = df 
+
+    # Metadaten-dfs noch mergen!?
+    for name, df in metadata.items():
+        dbh.upload_img_metadata(df, name, coll_name="products", now=now)
+
+        result = fh.ExtractResult(
+            status=fh.ExtractStatus.SKIPPED,
+            files=None,
+            folders=None   
+                )
+
+    if len(other_files) > 0:
+        result = fh.ExtractResult(
+            status=fh.ExtractStatus.DONE,
+            files=other_files,
+            folders=None   
+                )
+            
+    return result
+
+   
 if __name__ == "__main__":
     image_etl()
-
-load_env_vars()
-
-ROOT = Path(os.getenv("LOCAL_ROOT"))
-DATA = Path(os.getenv("LOCAL_DATA"))
-VENV = Path(os.getenv("LOCAL_VENV"))
-
-############################################## Unzipp images###############################################
-zip_path = DATA / "images.zip"
-extract_dir = zip_path.parent / "unzipped_images"
-
-with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-    zip_ref.extractall(extract_dir)
-
-print("Unzipped to:", extract_dir)
-
-
-############################################# Create raw Meta-databases for images ##############################
-TEST_IMAGES = DATA / "unzipped_images" / "images" / "image_test"
-TEST_IMAGES.mkdir(parents=True, exist_ok=True)
-
-TRAIN_IMAGES = DATA / "unzipped_images" / "images" / "image_train"
-TRAIN_IMAGES.mkdir(parents=True, exist_ok=True)
-
-
-DATA_LAKE = DATA / "data_lake"
-DATA_LAKE.mkdir(parents=True, exist_ok=True)
- 
-DATA_PROCESSED = DATA / "data_processed"
-DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
-
-def extract_metadata(image_dir, output_name):
-    records = []
-    for img_file in image_dir.glob("*.jpg"):
-        try:
-            with Image.open(img_file) as img:
-                width, height = img.size
-
-            product_id = extract_product_id(img_file.name)
-            if not product_id:
-                print(f"No product ID found for {img_file.name}")
-                continue
-
-            records.append({
-                "product_id": product_id,
-                "path": str(img_file.relative_to(DATA)),
-                "width": width,
-                "height": height
-            })
-
-        except Exception as e:
-            print(f"Error processing {img_file.name}: {e}")
-
-    df = pd.DataFrame(records)
-    df.to_csv(DATA_LAKE / output_name, index=False)
-    return df
-
-
-df_test  = extract_metadata(TEST_IMAGES,  "metadata_test.csv")
-df_train = extract_metadata(TRAIN_IMAGES, "metadata_train.csv")
-
-
-db, db_name, coll_dict = setup_mongodb()
-collection = coll_dict["products"]
-now = datetime.now()
-
-def upload_df_to_mongo(df, source_name):
-    ops = []
-    for _, row in df.iterrows():
-        doc = row.to_dict()
-        doc["source"] = source_name
-        doc["upload_time"] = now
-
-        ops.append(
-            UpdateOne(
-                {"product_id": doc["product_id"], "path": doc["path"]},
-                {"$set": doc},
-                upsert=True
-            )
-        )
-    
-    if ops:
-        collection.bulk_write(ops)
-        print(f"Inserted/Updated {len(ops)} documents from {source_name}")
-
-upload_df_to_mongo(df_train, "train")
-upload_df_to_mongo(df_test,  "test")
-
-count = collection.count_documents({})
-print("Total documents:", count)
-
-if count:
-    print("\nExample document:")
-    print(collection.find_one())
