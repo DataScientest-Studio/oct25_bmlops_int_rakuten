@@ -24,10 +24,12 @@ def fetch_files(src_path=None, dst_path=None, file_type=None):
 
     if not file_type:
         file_type = [".csv", 
+                    ".zip", 
                      # ".json"
                      ]
 
     folder = Path(src_path)
+    # print(f"[DEBUG] src_path ({src_path}); dst_path ({dst_path})")
     files = [str(f) for f in folder.iterdir() \
              if f.suffix.lower() in file_type]
     
@@ -37,9 +39,7 @@ def fetch_files(src_path=None, dst_path=None, file_type=None):
     
     files_new = []
     for f in files:
-        # check for columns
-        # to be added
-        f_moved = fh.move_file(f, dst_path)
+        f_moved = fh.move_file(f, Path(dst_path))
         files_new.append(str(f_moved))
 
     print(f"Found {len(files)} files in 'data_input' folder and moved them to folder 'data_lake'")
