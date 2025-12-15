@@ -26,12 +26,21 @@ def new_file_check(f_names=None, folder=None):
 
         folder = DATA_LAKE
 
-    # workflow  
-    df_dict = fh.data_preview(f_names, folder)
+    # workflow
+    csv_files = [f for f in f_names if Path(f).suffix.lower() == ".csv"]
+    zip_files = [f for f in f_names if Path(f).suffix.lower() == ".zip"]
+
+    df_dict = fh.data_preview(csv_files, folder)
     if not df_dict:
         print("Files cannot be found. Please check the input.")
         return None
         
     need_update = dh.check_latest_products(df_dict, "products")
-
+    need_update["img_files"] = zip_files
+    
     return need_update
+    
+    
+        
+        
+        
