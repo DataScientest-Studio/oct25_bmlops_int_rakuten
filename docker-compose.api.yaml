@@ -3,15 +3,23 @@
 ###############################################################################
 services:  
   fastapi:
-    build: ./fastapi
+    build: 
+      context: .
+      dockerfile: fastapi/Dockerfile
     container_name: fastapi
     ports:
       - "8001:8001"
-    depends_on:
-      - mlflow
-    environment:
-      MLFLOW_TRACKING_URI: http://mlflow:5000
+    # depends_on:
+    #   - mlflow
+    # environment:
+    #   MLFLOW_TRACKING_URI: http://mlflow:5000
     restart: always
+    networks:
+      - rakuten_network
+  
+networks:
+  rakuten_network:
+    external: true
 
 # Alternative:
 #  bentoml:
