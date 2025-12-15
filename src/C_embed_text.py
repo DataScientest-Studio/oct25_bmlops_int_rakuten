@@ -9,7 +9,7 @@
 import utils.ETL_preprocess_helper as eph 
 # import src.setup_helper as sh 
 import utils.database_helper as dbh 
-from utils.settings import session
+# from utils.settings import session
 
 # importlib.reload(sh)
 # importlib.reload(dh)
@@ -41,9 +41,13 @@ def text_embed(coll_name=None, cols_needed=None):
     if df is None:
         return None
     
-    df_prep = eph.prepare_embed(df)
-    df_emb = eph.embed_text(df_prep)
-    dbh.upload_embeds(df_emb, coll_name)
+    # due to memory limits, we will not proceed with embedding for now
+    print("⚠️ Creating embedding from text skipped due to memory limits.")
+    return None
+
+    # df_prep = eph.prepare_embed(df)
+    # df_emb = eph.embed_text(df_prep)
+    # dbh.upload_embeds(df_emb, coll_name)
 
 if __name__ == "__main__":
     text_embed()
