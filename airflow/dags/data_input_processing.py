@@ -11,14 +11,15 @@ from datetime import datetime, timedelta
 # from airflow.sensors.filesystem import FilePatternSensor
 # from airflow.operators.python import PythonOperator
 from airflow.decorators import dag, task
+from airflow.exceptions import AirflowSkipException
 from airflow.sensors.python import PythonSensor
 
 from A_fetch_files import fetch_files
 from A_new_file_check import new_file_check
-from B_ETL_text import text_etl
-# from B_ETL_image import image_etl
+from B_ETL_text_general import text_general_etl
+from B_ETL_image import image_etl
 from C_embed_text import text_embed
-# from C_embed_image import image_embed
+# from C_embed_image import image_embed    # not yet implemented
 
 
 # defining paths
@@ -27,6 +28,7 @@ DATA_LAKE = Path("/opt/airflow/data/data_lake")
 DATA_DONE = Path("/opt/airflow/data/data_done")
 
 types_allowed = [".csv", 
+                ".zip", 
                  # ".json"
                  ]
 
@@ -67,6 +69,9 @@ def data_processing_pipeline():
     def run_fetch_files():
         files = fetch_files(src_path=DATA_INPUT, 
                             dst_path=DATA_LAKE)
+        if not files:
+            raise AirflowSkipException("During 'run_fetch_files', no files found")
+
         return [str(f) for f in files]
     
     # task 2: check content of new files 
@@ -78,16 +83,24 @@ def data_processing_pipeline():
 
     # task 3-A: ETL text  
     @task
-    def run_text_etl(files, check_result):
-        return text_etl(f_names=files, 
+    def run_text_general_etl(files, check_result):
+        return text_general_etl(f_names=files, 
                         src_folder=DATA_LAKE, 
                         dst_folder=DATA_DONE,
                         product_dict=check_result)
 
     # task 3-B: ETL image  
-    # @task
-    # def run_image_etl(check_result:
-    #     return image_etl(check_result)
+    @task
+    def run_image_etl(check_result):
+        result = image_etl(src_folder=DATA_LAKE, 
+                            dst_folder=DATA_DONE,
+                            product_dict=check_result)
+    
+        if result.status is fh.ExtractStatus.SKIPPED:
+            print("Skipped 'file unzipping' – destination folder ist not empty")
+        
+        else: 
+            return result
 
     # task 4-A: create embeddings from text
     @task
@@ -103,8 +116,8 @@ def data_processing_pipeline():
     fetched = run_fetch_files()
     check_result = run_new_file_check(fetched)
 
-    etl_text = run_text_etl(fetched, check_result)
-    # etl_image = run_image_etl(check_result)
+    etl_text = run_text_general_etl(fetched, check_result)
+    etl_image = run_image_etl(check_result)
     
     run_text_embed(etl_text)
     # run_image_embed(etl_image)
