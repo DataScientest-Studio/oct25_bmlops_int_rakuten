@@ -1,6 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 import pickle
+import os
 import numpy as np
 import pandas as pd
 import mlflow
@@ -14,7 +15,9 @@ from utils.file_helper import save_pickle2
 from utils.similarity_helper import create_array, combine_txt_img, create_knn_sm
 
 # ----------------- MLflow Setup -----------------
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri(
+    os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
+)
 mlflow.set_experiment("Recos")
 
 def build_knn(num_k=10, combine_weight=0.6):

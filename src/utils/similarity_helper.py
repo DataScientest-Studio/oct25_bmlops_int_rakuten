@@ -1,6 +1,6 @@
 # similarity_helper.py
 # imports
-import faiss
+#import faiss
 import gridfs
 import numpy as np
 
@@ -53,56 +53,56 @@ def create_knn_sm(array, metric="cosine", num_k=5):
     return arr_top_k
     
 
-def create_faiss_idx(array, path):
-    if array.dtype != np.float32:
-        array = array.astype(np.float32)
+#def create_faiss_idx(array, path):
+#    if array.dtype != np.float32:
+#        array = array.astype(np.float32)
 
-    d = array.shape[1]
-    index = faiss.IndexFlatIP(d)  # Using Inner Product for Cosine Similarity
-    index.add(array) 
+#    d = array.shape[1]
+#    index = faiss.IndexFlatIP(d)  # Using Inner Product for Cosine Similarity
+#    index.add(array) 
 
     # save index locally
-    faiss.write_index(index, str(path))
-    print("FAISS index locally saved.")
-    return index
+#    faiss.write_index(index, str(path))
+#    print("FAISS index locally saved.")
+#    return index
 
-def save_faiss_to_mongo(path: str, db_name: str=None):
-    db, _, _, = dh.setup_mongodb(db_name=db_name)
-    fs = gridfs.GridFS(db)
+#def save_faiss_to_mongo(path: str, db_name: str=None):
+#    db, _, _, = dh.setup_mongodb(db_name=db_name)
+#    fs = gridfs.GridFS(db)
 
-    f_path = path / "faiss_index.bin"
-    with open(f_path, "rb") as f:
-        file_id = fs.put(f, filename="faiss_index")
-        print("FAISS index loaded to MongoDB.")
-        return file_id
+#    f_path = path / "faiss_index.bin"
+#    with open(f_path, "rb") as f:
+#        file_id = fs.put(f, filename="faiss_index")
+#        print("FAISS index loaded to MongoDB.")
+#        return file_id
 
-def load_faiss_from_mongo(db_name, filename="faiss_index"):
-    db, _, _, _ = dh.setup_mongodb(db_name=db_name)
-    fs = gridfs.GridFS(db)
+#def load_faiss_from_mongo(db_name, filename="faiss_index"):
+#    db, _, _, _ = dh.setup_mongodb(db_name=db_name)
+#    fs = gridfs.GridFS(db)
 
-    file_data = fs.find_one({"filename": filename})
-    if not file_data:
-        raise ValueError("FAISS index not found in MongoDB.")
+#    file_data = fs.find_one({"filename": filename})
+#    if not file_data:
+#        raise ValueError("FAISS index not found in MongoDB.")
 
-    bin_data = file_data.read()
+#    bin_data = file_data.read()
 
     # Temporäre Datei erzeugen
-    import tempfile
-    with tempfile.NamedTemporaryFile(delete=False) as tmp:
-        tmp.write(bin_data)
-        tmp_path = tmp.name
+#    import tempfile
+#    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+#        tmp.write(bin_data)
+#        tmp_path = tmp.name
 
-    return faiss.read_index(tmp_path)
+#    return faiss.read_index(tmp_path)
 
-def faiss_search(index: faiss.Index, query: np.ndarray, k=10):
-    if query.dtype != np.float32:
-        query = query.astype(np.float32)
+#def faiss_search(index: faiss.Index, query: np.ndarray, k=10):
+#    if query.dtype != np.float32:
+#        query = query.astype(np.float32)
 
-    D, I = index.search(query, k)  
+#    D, I = index.search(query, k)  
     # D = distances, shape (1, k)
     # I = indices    shape (1, k)
 
-    return I[0], D[0]
+#    return I[0], D[0]
 
 def l2_norm(x):
         return x / np.linalg.norm(x, axis=1, keepdims=True)

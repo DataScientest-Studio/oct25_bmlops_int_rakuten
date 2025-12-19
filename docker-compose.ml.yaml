@@ -1,0 +1,57 @@
+#version: "3.9"
+
+services:
+  mongo:
+    image: mongo:4.4   # Kompatibel mit CPUs ohne AVX
+    container_name: mongo
+    restart: no
+    networks:
+      - mlops-net
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v3.7.0
+    container_name: mlflow
+    restart: no
+    ports:
+      - "5000:5000"
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri sqlite:///mlflow.db
+      --default-artifact-root /mlruns
+      --allowed-hosts mlflow,mlflow:5000,localhost:5000,127.0.0.1
+      --cors-allowed-origins "*"
+    volumes:
+      - ./mlruns:/mlruns
+    networks:
+      - mlops-net
+
+  knn_trainer:
+    build:
+      context: .
+      dockerfile: Dockerfile.trainer
+    container_name: knn_trainer
+    restart: no
+    networks:
+      - mlops-net
+    depends_on:
+      - mongo
+      - mlflow
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: ${MONGO_URI}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    ports:
+      - "6000:6000"
+
+volumes:
+  mongo_data:
+networks:
+  mlops-net:
+    external: true

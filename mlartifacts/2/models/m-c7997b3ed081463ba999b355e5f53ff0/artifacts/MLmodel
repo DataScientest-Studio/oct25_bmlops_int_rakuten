@@ -1,0 +1,26 @@
+artifact_path: mlflow-artifacts:/2/models/m-c7997b3ed081463ba999b355e5f53ff0/artifacts
+flavors:
+  python_function:
+    artifacts:
+      ar_comb:
+        path: artifacts\knn_embed_comb.npy
+        uri: C:\Users\User\Desktop\MyMLOps\data\models\20251215_174020_content_RecomSys\knn_embed_comb.npy
+      idx_map:
+        path: artifacts\idx_map.pkl
+        uri: C:\Users\User\Desktop\MyMLOps\data\models\20251215_174020_content_RecomSys\idx_map.pkl
+    cloudpickle_version: 3.1.2
+    code: null
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.pyfunc.model
+    python_model: python_model.pkl
+    python_version: 3.12.6
+    streamable: false
+mlflow_version: 3.7.0
+model_id: m-c7997b3ed081463ba999b355e5f53ff0
+model_size_bytes: 1337770
+model_uuid: m-c7997b3ed081463ba999b355e5f53ff0
+prompts: null
+run_id: d590a25b250047dc9d0a34bbc8a46b8c
+utc_time_created: '2025-12-15 16:40:23.389486'

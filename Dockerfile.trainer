@@ -1,0 +1,42 @@
+# Dockerfile.trainer
+FROM python:3.10-slim
+
+# Systempakete für Build & Git
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+ENV PATH="/root/.local/bin:$PATH"
+# UV (Universal Virtualenv) installieren
+RUN pip install --upgrade pip
+
+# ---- Basis + MLOps Pakete ----
+RUN pip install \
+    numpy>=1.26 \
+    pandas>=2.3.3 \
+    tqdm>=4.67.1 \
+    click>=8.3.1 \
+    pymongo \
+    beautifulsoup4 \
+    python-dateutil \
+    pytz \
+    psutil \
+    lxml>=5.0 \
+    Pillow>=10.0 \
+    simplejson \
+    python-dotenv>=0.9.9 \
+    mlflow>=3.6.0 \
+    scikit-learn>=1.7.2 \
+    scipy>=1.10
+
+# ---- Optional: Heavy-Pakete (nur bei Bedarf) ----
+# RUN pip install tensorflow>=2.20.0 faiss-cpu>=1.13 sentence-transformers>=5.1.2
+
+# ---- Code kopieren ----
+COPY . .
+
+# ---- Standard-Command: dein Trainer starten ----
+CMD ["python", "src/knn_mlflow.py"]
