@@ -1,7 +1,7 @@
-## db_helper.py
+## database_helper.py
 # imports 
 import os
-
+from datetime import datetime
 import pandas as pd
 from pymongo import UpdateOne
 from datetime import datetime 
@@ -15,10 +15,9 @@ def load_cursor(coll_name, cols_needed):
     if collection is None:
         return None
     
-    if not cols_needed:
-        projection = {"_id": 0} 
-    else:
-        projection = {"_id": 0}   
+    projection = {"_id": 0} 
+
+    if cols_needed:
         for col in cols_needed:
             projection[col] = 1
 
@@ -170,15 +169,21 @@ def upload_text_data(df, coll_name="products"):
     data["upload_time (text)"] = now
 
     records = []
-    records.append(UpdateOne(
-                            {"productid": data["productid"]},
-                            {"$set": data,
+
+    for row in df.to_dict("records"):
+        productid = int(row["productid"])
+
+        records.append(UpdateOne(
+                            {"productid": productid},
+                            {"$set": row,
                             "$currentDate": {"lastModified": True }},
                             upsert=True
                             ))
 
-    collection.bulk_write(records, ordered=False)
-    print(f"Inserted {len(records)} records .\n\t--> cols: {existing}\n")
+    if records: 
+        collection.bulk_write(records, ordered=False)
+    
+    print(f"Inserted/updated {len(records)} records .\n\t--> cols: {existing}\n")
 
     print(f"\n{'='*60}\n--- DB CHECK AFTER DATA LOAD ---\n{'='*60}")
     count = collection.count_documents({})

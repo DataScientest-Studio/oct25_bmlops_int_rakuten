@@ -39,6 +39,36 @@ def new_file_check(f_names=None, folder=None):
     need_update["img_files"] = zip_files
     
     return need_update
+
+    # update_dict = {}
+    # update_dict["text"] = update_text or None
+    # update_dict["image"] = update_image or None
+
+    # if update_image:
+    #     # print("✅ Database is empty and up-to-date")
+    #     update_dict["image"] = update_image
+
+    # if update_dict.empty:
+    #     print("✅ Database is up-to-date")
+    #     update_dict["text"] = None
+    #     update_dict["image"] = None
+    #     return None
+    # else: 
+    #     
+    
+
+    # if not update_text.empty or not update_image.empty:
+    #     print("⚠️ Database needs an update.")
+    #     if update_text:
+    #         print("⚠️ Text columns are not up-to-date")
+        
+    #     if update_image:
+    #         print("⚠️ Image columns are not up-to-date")
+        
+    #     return update_text, update_image
+    
+    # elif not update_text
+
     
     
         

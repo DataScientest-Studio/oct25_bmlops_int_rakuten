@@ -20,6 +20,8 @@ services:
 networks:
   rakuten_network:
     external: true
+    # driver: bridge
+    # name: rakuten_network
 
 # Alternative:
 #  bentoml:
@@ -32,3 +34,4 @@ networks:
 #    command: bentoml serve /bento --host 0.0.0.0 --port 3000
 
 ###############################################################################
+

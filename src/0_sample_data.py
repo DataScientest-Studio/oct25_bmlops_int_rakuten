@@ -5,19 +5,24 @@ import click
 # import importlib
 
 import utils.setup_helper as sh
-import src.utils.database_helper as dbh
+import utils.database_helper as dbh
 from utils.data_helper import list_products, draw_samples
 
 # importlib.reload(dh)
 
 
+# ---------
+# 
+# ------------
+
+@sh.cli_or_api
 def main(num):
     # configuration
     coll_name = "products"
     cols_needed = None 
 
     # loading data from 
-    df = dbh.load_cursor(coll_name, cols_needed)
+    df = dh.load_cursor(coll_name, cols_needed)
     
     if df is None:
         print(" Error - creating data from database.")
@@ -33,7 +38,6 @@ def main(num):
 @click.option("--num",
               type=int,
               required=False)
-@sh.cli_or_api
 def main_entry_check(num):
     main(num)
 

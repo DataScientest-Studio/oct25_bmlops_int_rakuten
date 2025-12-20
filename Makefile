@@ -34,3 +34,23 @@ etl:
 # recommend:
 # 	bash ${ROOT}/src/4_recommend.sh ${ENV} ${N_NEIGHBORS}
 
+# ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+# PROJECT := monitoring
+
+# .PHONY: all stop evaluation fire-alert reports  
+
+# all: 
+# 	docker compose -p $(PROJECT) -f $(ROOT)/docker-compose.yaml up --build -d
+
+# stop: 
+# 	docker compose -p $(PROJECT) -f $(ROOT)/docker-compose.yaml down
+
+# evaluation:
+# 	docker compose -p $(PROJECT)-f $(ROOT)/docker-compose.eval.yaml up --build -d
+
+# fire-alert:
+# 	docker compose -p $(PROJECT) -f $(ROOT)/docker-compose.yaml stop bike-api
+
+# reports:
+# 	python3 $(ROOT)/src/main_drift.py
+

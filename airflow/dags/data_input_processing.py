@@ -19,7 +19,8 @@ from A_new_file_check import new_file_check
 from B_ETL_text_general import text_general_etl
 from B_ETL_image import image_etl
 from C_embed_text import text_embed
-# from C_embed_image import image_embed    # not yet implemented
+from utils import file_helper as fh
+# from C_embed_image import image_embed
 
 
 # defining paths
@@ -28,7 +29,7 @@ DATA_LAKE = Path("/opt/airflow/data/data_lake")
 DATA_DONE = Path("/opt/airflow/data/data_done")
 
 types_allowed = [".csv", 
-                ".zip", 
+                ".zip",
                  # ".json"
                  ]
 
@@ -85,9 +86,9 @@ def data_processing_pipeline():
     @task
     def run_text_general_etl(files, check_result):
         return text_general_etl(f_names=files, 
-                        src_folder=DATA_LAKE, 
-                        dst_folder=DATA_DONE,
-                        product_dict=check_result)
+                            src_folder=DATA_LAKE, 
+                            dst_folder=DATA_DONE,
+                            product_dict=check_result)
 
     # task 3-B: ETL image  
     @task
@@ -109,7 +110,7 @@ def data_processing_pipeline():
 
     # task 4-B: create embeddings from text
     # @task
-    # def run_imagew_embed(_):
+    # def run_image_embed(_):
     #     return image_embed()
 
     # define dependencies

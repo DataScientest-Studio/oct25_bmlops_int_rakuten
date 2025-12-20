@@ -124,3 +124,5 @@ def image_etl(img_path, dst_folder, product_dict=None):
    
 if __name__ == "__main__":
     image_etl()
+
+

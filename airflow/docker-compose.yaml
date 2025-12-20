@@ -6,20 +6,20 @@ x-airflow-common: &airflow-common
     MONGO_URI: ${MONGO_URI}
 
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-    AIRFLOW__CORE__SQL_ALCHEMY_CONN: ${AIRFLOW_DB_URI}
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN: ${AIRFLOW_DB_URI} 
     AIRFLOW__CELERY__RESULT_BACKEND: ${AIRFLOW_RESULT_BACKEND}
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ""
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
     # AIRFLOW__CORE__LOAD_EXAMPLES: "true"
-    AIRFLOW__API__AUTH_BACKEND: "airflow.api.auth.backend.basic_auth"
+    AIRFLOW__API__AUTH_BACKENDS: "airflow.api.auth.backend.basic_auth"
     # AIRFLOW__SMTP__SMTP_HOST: "smtp.gmail.com"
     # AIRFLOW__SMTP__SMTP_PORT: 587
     # AIRFLOW__SMTP__SMTP_USER: "de.airflow@gmail.com"
     # AIRFLOW__SMTP__SMTP_PASSWORD: "cfsrvkongsobheta"
     # AIRFLOW__SMTP__SMTP_MAIL_FROM: "de.airflow@gmail.com"
 
-    AIRFLOW_ADDITIONAL_PACKAGES: ${AIRFLOW_ADDITIONAL_PACKAGES}
+    _PIP_ADDITIONAL_REQUIREMENTS: ${AIRFLOW_ADDITIONAL_PACKAGES}
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
@@ -48,7 +48,7 @@ services:
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "airflow" ]
+      test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 5s
       retries: 5
     restart: always
@@ -59,7 +59,7 @@ services:
     ports:
       - 6379:6379
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 30s
       retries: 50
@@ -72,7 +72,7 @@ services:
     ports:
       - 8080:8080
     healthcheck:
-      test: [ "CMD", "curl", "--fail", "http://localhost:8080/health" ]
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -83,7 +83,11 @@ services:
     command: scheduler
     container_name: airflow-scheduler
     healthcheck:
-      test: [ "CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"' ]
+      test:
+        [
+          "CMD-SHELL",
+          'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"',
+        ]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -104,12 +108,30 @@ services:
 
   airflow-init:
     <<: *airflow-common
-    command: >
-      bash -c " airflow db "
+    command: |
+      bash -c "
+      airflow db init
+      "
+      # &&
+      # python - << 'EOF'
+      # from airflow.api_connexion.security import create_user
+
+      # create_user(
+      #     username='${AIRFLOW_USERNAME}',
+      #     password='${AIRFLOW_PASSWORD}',
+      #     firstname='Air',
+      #     lastname='Flow',
+      #     email='admin@example.com',
+      #     role_name='Admin',
+      #     )
+      # print('Admin user created')
+    
+      # EOF
+     
     restart: "no"
     environment:
       <<: *airflow-common-env
-      _AAIRFLOW_DB_MIGRATE: "true"
+      _AIRFLOW_DB_MIGRATE: "true"
       _AIRFLOW_WWW_USER_CREATE: "true"
       _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_USERNAME}
       _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_PASSWORD}
@@ -120,7 +142,7 @@ services:
     ports:
       - 5555:5555
     healthcheck:
-      test: [ "CMD", "curl", "--fail", "http://localhost:5555/" ]
+      test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -130,14 +152,19 @@ services:
     image: mongo:6
     container_name: airflow-mongodb
     restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     ports:
       - "27017:27017"
-    environment:
-      MONGO_USERNAME: ${MONGO_USERNAME}
-      MONGO_PASSWORD: ${MONGO_PASSWORD}
     volumes:
       - mongo-db-volume:/data/database
 
 volumes:
   postgres-db-volume:
   mongo-db-volume:
+
+networks:
+  default:
+    driver: bridge
+    name: rakuten_network

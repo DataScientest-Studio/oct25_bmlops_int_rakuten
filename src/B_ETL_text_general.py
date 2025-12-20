@@ -70,4 +70,21 @@ def text_general_etl(f_names, src_folder, dst_folder, product_dict):
     return True
     
 if __name__ == "__main__":
-    text_general_etl()
+    text_etl()
+
+# Traceback (most recent call last):
+#   File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 433, in _execute_task
+#     result = execute_callable(context=context, **execute_callable_kwargs)
+#   File "/home/airflow/.local/lib/python3.8/site-packages/airflow/decorators/base.py", line 241, in execute
+#     return_value = super().execute(context)
+#   File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/python.py", line 199, in execute
+#     return_value = self.execute_callable()
+#   File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/python.py", line 216, in execute_callable
+#     return self.python_callable(*self.op_args, **self.op_kwargs)
+#   File "/opt/airflow/dags/data_input_processing.py", line 82, in run_text_etl
+#     return text_etl(f_names=files,
+#   File "/opt/airflow/src/B_ETL_text.py", line 48, in text_etl
+#     renamed_df = eph.filter_rename_columns(cleaned_df, cols_allowed, rename_dict)
+#   File "/opt/airflow/src/utils/ETL_preprocess_helper.py", line 189, in filter_rename_columns
+#     allowed = [col for col in df.columns if col in cols_allowed]
+# AttributeError: 'dict' object has no attribute 'columns'

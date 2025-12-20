@@ -6,15 +6,17 @@ import numpy as np
 
 from sklearn.neighbors import NearestNeighbors
 
-from . import database_helper as dbh
+import utils.db_helper as dh
 
+def parse_embedding(s: str):
+    return np.array(s.split(","), dtype=np.float32)
 
 def create_array(docs, normalize=None):
     # create numpy arrays for recommender system
-    product_ids = np.array([d["productid"] for d in docs], dtype=np.int32)
+    product_ids = np.array([d["productid"] for d in docs], dtype=np.int64)
     text_emb = np.array([d["text_embed"] for d in docs], dtype=np.float32)
-    image_emb= np.array([d["image_embed"] for d in docs], dtype=np.float32)
-
+    #image_emb= np.array([d["embedding_str"] for d in docs], dtype=np.float32)
+    image_emb = np.array([parse_embedding(d["embedding_str"]) for d in docs], dtype=np.float32)
     # create id to index mapping
     id_to_index = {pid: i for i, pid in enumerate(product_ids)}
 
@@ -34,7 +36,7 @@ def create_array(docs, normalize=None):
                       
 def combine_txt_img(image_emb, text_emb, alpha):
     # combining vectors to recommender system matrix
-    alpha = 0.3          # weight for image vector
+             # weight for image vector
     beta = 1- alpha      # weight for text vector
 
     embed_comb = np.hstack([alpha * image_emb, beta * text_emb])
@@ -46,7 +48,7 @@ def combine_txt_img(image_emb, text_emb, alpha):
 def create_knn_sm(array, metric="cosine", num_k=5):
     knn = NearestNeighbors(metric=metric, 
                        n_neighbors=num_k)
-
+    knn.fit(array)
     arr_top_k = knn.kneighbors(array, return_distance=False)
     return arr_top_k
     
@@ -60,11 +62,12 @@ def create_faiss_idx(array, path):
     index.add(array) 
 
     # save index locally
-    faiss.write_index(index, path)
+    faiss.write_index(index, str(path))
     print("FAISS index locally saved.")
+    return index
 
 def save_faiss_to_mongo(path: str, db_name: str=None):
-    db, _, _, _ = dh.setup_mongodb(db_name=db_name)
+    db, _, _, = dh.setup_mongodb(db_name=db_name)
     fs = gridfs.GridFS(db)
 
     f_path = path / "faiss_index.bin"
@@ -103,4 +106,3 @@ def faiss_search(index: faiss.Index, query: np.ndarray, k=10):
 
 def l2_norm(x):
         return x / np.linalg.norm(x, axis=1, keepdims=True)
-
