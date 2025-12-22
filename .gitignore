@@ -101,3 +101,7 @@ target/
 **/.env.session
 **/*.ipynb
 _backup/pyproject copy.toml
+**/*_unused*
+
+
+git config --get-all user.name [0ms]

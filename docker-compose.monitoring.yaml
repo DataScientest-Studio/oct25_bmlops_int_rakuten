@@ -21,7 +21,7 @@ services:
     ports:
       - "3100:3100"
     volumes:
-      - ./deployment/loki/loki.yaml:/etc/loki/loki.yaml
+      - ./monitoring/loki/loki.yaml:/etc/loki/loki.yaml
       - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml
     restart: always
@@ -34,7 +34,7 @@ services:
       # - /var/lib/docker/containers:/var/lib/docker/containers:ro
       # - /etc/promtail:/etc/promtail
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./deployment/loki/promtail.yaml:/etc/promtail/promtail.yaml
+      - ./monitoring/loki/promtail.yaml:/etc/promtail/promtail.yaml
     command: -config.file=/etc/promtail/promtail.yaml
     restart: always
     depends_on:
@@ -85,3 +85,4 @@ networks:
   default:
     driver: bridge
     name: rakuten_network
+
