@@ -99,10 +99,14 @@ airflow/logs/**
 **/*_dev_*
 **/uv.lock
 **/*_old_*
-**/.env.session
-**/*.ipynb
 _backup/pyproject copy.toml
 **/*_unused*
+
+**/*.ipynb
+**/.env.*
+
+# files needed for GitActions (CI/CD)
+!**/ci.env   
 
 
 git config --get-all user.name [0ms]

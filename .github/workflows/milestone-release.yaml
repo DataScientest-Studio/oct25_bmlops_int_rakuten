@@ -1,0 +1,70 @@
+name: Milestone release
+
+on:
+    push:
+        tags:
+            - "v*.*.*"
+
+jobs:            
+    release-check (milestone):
+        runs-on: ubuntu-latest
+        
+        steps:
+            - uses: actions/checkout@4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                python-version: "3.12" 
+            
+            -name: Install dependencies
+              run: |
+                uv sync --frozen
+
+            - name: Load CI environment
+              run: |
+                set -a
+                source ci.env
+                set +a
+
+                while read -r line; do
+                if [[ "$line" != "" && "$line" != \#* ]]; then
+                    echo "$line" >> $GITHUB_ENV
+                fi
+                done < ci.env    
+
+            - name: Validate environment variables
+              run: |
+                uv run python tests/check_env.py
+
+            - name: Check Docker Compose files 
+              run: |
+                echo "Validating $f"  
+                for f in docker-compose*.yaml; do
+                  docker compose \
+                  --env-file env/ci.env \
+                  -f "$f" \
+                  config > /dev/null
+                done
+
+            - name: Build Docker images (no push)
+              run: |
+                for f in docker-compose*.yaml; do
+                    echo "Building $f"
+                    docker compose \
+                    --env-file env/ci.env \
+                    -f "$f" \
+                    build 
+                done
+
+
+            - name: Check DockerCompose configuration (Airflow)
+              run: |
+                docker compose \
+                --env-file env/ci.env \
+                -f docker-compose.airflow.yaml config
+                
+            - name: Check DockerCompose configuration (Monitoring)
+              run: |
+                docker compose \
+                -f docker-compose.airflow.yaml config

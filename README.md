@@ -1,10 +1,20 @@
-Project Name
-==============================
+# Rakuten e-commerce product classification
 
-This project is a starting Pack for MLOps projects based on the subject "movie_recommandation". It's not perfect so feel free to make some modifications on it.
+---
 
-Project Organization
-------------
+Cataloging products according to different data (texts and images) is important for e-commerce since it allows various applications such as product recommendation and personalized search. It is then a question of predicting the type code of the products knowing textual data (designation and description of the products) as well as image data (image of the product).
+
+---
+
+## Data
+This project is part of the challengeRakuten France Multimodal Product Data Classification, the data and their description are publically available: [Dataset](https://challengedata.ens.fr/challenges/35)
+Text data: ~60 mb
+Image data: ~2.2 gb
+99k data entries with more than 1000 classes.
+
+---
+
+## Project Organization
 
     ├── LICENSE
     ├── README.md          <- The top-level README for developers using this project.
@@ -49,5 +59,10 @@ Project Organization
     │   └── config         <- Describe the parameters used in train_model.py and predict_model.py
 
 --------
+
+
+
+
+
 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
