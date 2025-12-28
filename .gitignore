@@ -78,6 +78,7 @@ target/
 # exclude data and logs from source control by default
 /data/
 /logs/
+airflow/logs/**
 **/*commit_msg*
 /mlflow/
 
