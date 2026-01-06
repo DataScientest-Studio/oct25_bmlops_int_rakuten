@@ -1,7 +1,5 @@
 # Rakuten e-commerce product classification
 
----
-
 Cataloging products according to different data (texts and images) is important for e-commerce since it allows various applications such as product recommendation and personalized search. It is then a question of predicting the type code of the products knowing textual data (designation and description of the products) as well as image data (image of the product).
 
 ---
@@ -15,52 +13,44 @@ Image data: ~2.2 gb
 ---
 
 ## Project Organization
+--> Update nötig [tree -H "." -L 4 -d -o ~/tree.html]
 
-    ├── LICENSE
-    ├── README.md          <- The top-level README for developers using this project.
-    ├── data
-    │   ├── external       <- Data from third party sources.
-    │   ├── interim        <- Intermediate data that has been transformed.
-    │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
-    │
-    ├── logs               <- Logs from training and predicting
-    │
-    ├── models             <- Trained and serialized models, model predictions, or model summaries
-    │
-    ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
-    │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
-    │
-    ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-    │                         generated with `pip freeze > requirements.txt`
-    │
-    ├── src                <- Source code for use in this project.
-    │   ├── __init__.py    <- Makes src a Python module
-    │   │
-    │   ├── data           <- Scripts to download or generate data
-    │   │   └── make_dataset.py
-    │   │
-    │   ├── features       <- Scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
-    │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
-    │   │
-    │   ├── visualization  <- Scripts to create exploratory and results oriented visualizations
-    │   │   └── visualize.py
-    │   └── config         <- Describe the parameters used in train_model.py and predict_model.py
+<p align="left">
+    <a href="tree_commented.html">📁 Full project structure (HTML)</a>
+</p>
 
 --------
 
 ## Project Information
+## Prerequisites
++ python 3.11.x
++ Git
++ Python venv
+
+--------
+
+## Setup Guide
+
+1. Activate venv (for Linux and macOS)
+   ```bash
+   source .venv/bin/activate
+   ```
+
+2. Install the required packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Install pre-commit hooks:
+   ```bash
+   pre-commit install
+   ```
+4. Run the streamlit application:
+   ```bash
+   streamlit run src/app/streamlit_app.py
+   ```
+5. Open your browser and navigate to `http://localhost:8501` to view the application.
+
+
 
 This project is described in a report (`~/reports/report_RF`) summarizing the single training reports (`~/notebooks`). For a better understanding, the streamlit application on the project should also be taken into account (`~/streamlit`).
 
