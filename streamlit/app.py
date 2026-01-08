@@ -7,7 +7,9 @@ import streamlit as st
 # from pages import demo_1_upload_select, demo_2_prediction, demo_3_gradcam, pres_5_results_dataviz      # pages for 'presentation'
 # from pages import demo_4_shap                      # pages for 'demo'
 # from pages import extra_intro
-from pages import pres_0_home, pres_1_intro , pres_2_pipelines, pres_3_apis # , pres_3_study_design, pres_4_results_table, pres_5_results_dataviz, pres_6_take_home_msg #, results_exemple_train, results_exemple_test                   # pages for 'extras'
+from pages import (pres_0_home, pres_1_intro , pres_2_pipelines, pres_3_apis,
+                    pres_4_mlflow, pres_5_docker, pres_6_monitoring, 
+                    pres_7_on_going, pres_8_take_home_msg) # , pres_3_study_design,  #, results_exemple_train, results_exemple_test                   # pages for 'extras'
 
                     
 def clear_others(active_key):
@@ -25,9 +27,13 @@ with st.sidebar.expander("#### 🎥 Project Presentation"):
         "📑 Introduction",
         "🩺 Pipeline & Airflow",
         "📑 APIs",
-        # "🧠 Results (Training)",
-        # "📈 Results (Table)",
-        # "📊 Results (DataViz)",
+        "📈 MLflow",
+        "🧠 Docker",
+        "📊 Monitoring",
+        " On-going",
+        " Take home message"
+        # 
+        # 
         # " Take home message"
             ],
     key="presentation",              # persist selection across reruns
@@ -76,6 +82,11 @@ PAGES_PRESENTATION = {
     "📑 Introduction": pres_1_intro.show,
     "🩺 Pipeline & Airflow": pres_2_pipelines.show,
     "📑 APIs": pres_3_apis.show,
+    "📈 MLflow": pres_4_mlflow.show,
+    "🧠 Docker": pres_5_docker.show,
+    "📊 Monitoring": pres_6_monitoring.show,
+    " On-going": pres_7_on_going.show,
+    " Take home message": pres_8_take_home_msg.show
     # "🧠 Results (Training)": results_exemple_train.show,
     # "📈 Results (Table)": pres_4_results_table.show,
     # "📊 Results (DataViz)": pres_5_results_dataviz.show,

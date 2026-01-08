@@ -32,7 +32,7 @@ def show():
         
         On-going 
         - API security (BasicAuth or OAuth2)
-        - CI/CD pipelines (**GitHub Actions*)
+        - CI/CD pipelines (**GitHub Actions**)
         - Unit Testing
         - Portability (**AMI**, **Terraform**)
 

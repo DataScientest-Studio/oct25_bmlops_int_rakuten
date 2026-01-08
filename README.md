@@ -16,7 +16,7 @@ Image data: ~2.2 gb
 --> Update nötig [tree -H "." -L 4 -d -o ~/tree.html]
 
 <p align="left">
-    <a href="tree_commented.html">📁 Full project structure (HTML)</a>
+    <a href="static files/tree_commented.html">📁 Full project structure (HTML)</a>
 </p>
 
 --------

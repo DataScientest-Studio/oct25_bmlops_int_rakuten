@@ -11,7 +11,7 @@ import click
 import utils.setup_helper as sh 
 from utils.settings import session
 
-sh = importlib.reload(sh)
+# sh = importlib.reload(sh)
 
 def main(env=None):
     env = session.env
@@ -25,7 +25,8 @@ def main(env=None):
     # load paths from .env
     sh.get_paths()
     # print("[DEBUG] ROOT loaded =", session.root)
-    ROOT = session.root
+    ROOT = Path(__file__).resolve().parents[2]
+    session.root = ROOT
 
     LOGS = Path(ROOT) / "logs"
     LOGS.mkdir(parents=True, exist_ok=True)
