@@ -108,13 +108,21 @@ Feature Pipeline                                 Training / Recommendation Pipel
 
 ---
 
-## Setup Guide (core environment)
+## Setup Guide
 
 ```bash
-# create & activate virtual environment
+# (1) create & activate virtual environment
 uv init
 source .venv/bin/activate
 
-# install dependencies
+# (2-A) install core dependencies
 make setup
+(then 'enter' in shell)
+
+# (2-B) install other dependency group/-s
+make setup
+(then enter... + 'enter' in shell:
+- 'mlops' for ...
+- 'dev' for ...   
+- '') 
 
