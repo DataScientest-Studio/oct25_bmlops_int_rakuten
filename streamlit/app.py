@@ -7,7 +7,7 @@ import streamlit as st
 # from pages import demo_1_upload_select, demo_2_prediction, demo_3_gradcam, pres_5_results_dataviz      # pages for 'presentation'
 # from pages import demo_4_shap                      # pages for 'demo'
 # from pages import extra_intro
-from pages import pres_0_home, pres_1_intro #, pres_2_approach_eda, pres_3_study_design, pres_4_results_table, pres_5_results_dataviz, pres_6_take_home_msg #, results_exemple_train, results_exemple_test                   # pages for 'extras'
+from pages import pres_0_home, pres_1_intro , pres_2_pipelines, pres_3_apis # , pres_3_study_design, pres_4_results_table, pres_5_results_dataviz, pres_6_take_home_msg #, results_exemple_train, results_exemple_test                   # pages for 'extras'
 
                     
 def clear_others(active_key):
@@ -23,12 +23,12 @@ with st.sidebar.expander("#### 🎥 Project Presentation"):
     # options=
     [   "🏠 Home",
         "📑 Introduction",
-        "🩺 Approach and EDA",
-        "📑 Study design",
+        "🩺 Pipeline & Airflow",
+        "📑 APIs",
         # "🧠 Results (Training)",
-        "📈 Results (Table)",
-        "📊 Results (DataViz)",
-        " Take home message"
+        # "📈 Results (Table)",
+        # "📊 Results (DataViz)",
+        # " Take home message"
             ],
     key="presentation",              # persist selection across reruns
     index=None,
@@ -42,10 +42,10 @@ with st.sidebar.expander("### ⚡ Live Demo (Prediction)"):
     "Select topic:",
     # options=
     [
-        "🖼️ Choose a X-ray",
-        "🎯 Run Prediction",
-        "🌈 Grad-CAM Visualization",
-        "🔍 SHAP Explanation",             
+        # "🖼️ Choose a X-ray",
+        # "🎯 Run Prediction",
+        # "🌈 Grad-CAM Visualization",
+        # "🔍 SHAP Explanation",             
        # " Prediction",
        # "Credits",
     ],
@@ -62,8 +62,8 @@ with st.sidebar.expander("### 📚 Additional Results"):
     "Select analysis:",
     # options=
     [
-            "Model Performance",
-            "Confusion Matrices",
+            # "Model Performance",
+            # "Confusion Matrices",
         ],
     key="extra",
     index=None,
@@ -74,8 +74,8 @@ with st.sidebar.expander("### 📚 Additional Results"):
 PAGES_PRESENTATION = {
     "🏠 Home": pres_0_home.show,
     "📑 Introduction": pres_1_intro.show,
-    "🩺 Approach and EDA": pres_2_approach_eda.show,
-    "📑 Study design": pres_3_study_design.show,
+    "🩺 Pipeline & Airflow": pres_2_pipelines.show,
+    "📑 APIs": pres_3_apis.show,
     # "🧠 Results (Training)": results_exemple_train.show,
     # "📈 Results (Table)": pres_4_results_table.show,
     # "📊 Results (DataViz)": pres_5_results_dataviz.show,
@@ -86,7 +86,7 @@ PAGES_PRESENTATION = {
     # "Credits": ??.show
             }
 
-# PAGES_DEMO = {
+PAGES_DEMO = {
 #             "🖼️ Choose a X-ray": demo_1_upload_select.show,
 #             "🎯 Run Prediction": demo_2_prediction.show,
 #             "🌈 Grad-CAM Visualization": demo_3_gradcam.show,
@@ -94,9 +94,9 @@ PAGES_PRESENTATION = {
 #             "Run Prediction": prediction.show,
 #     "Grad-CAM Visualization": gradcam.show,
 #     "SHAP Explanation": shap.show,
-                # }
+                }
 
-# PAGES_EXTRA = {
+PAGES_EXTRA = {
 #         "Intro": extra_intro.show
     #     "🧠 Results (Training)": results_exemple_train.show,
     #    "📈 Results (Testing)": results_exemple_test.show, 
@@ -104,7 +104,7 @@ PAGES_PRESENTATION = {
 #     "Classification Reports": class_reports.show,
 #     "Model Comparison": model_comparison.show,
 #     "Credits": credits.show,
-                    # }
+                    }
 
 selected = [presentation, demo, extra]
 non_empty = [s for s in selected if s] 

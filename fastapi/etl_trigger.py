@@ -38,8 +38,6 @@ api_request_duration_seconds = Histogram(name="api_request_duration_seconds",
                                         )
 
 
-
-
 # --- Global Variables for Model and Data ---
 AIRFLOW_URL = "http://airflow-webserver:8080/api/v1"
 DAG_ID = "data_processing_pipeline"

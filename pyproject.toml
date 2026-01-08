@@ -22,14 +22,16 @@ dependencies = [
     "ruff>=0.14.7",
     "rich>=14.2.0",
     "streamlit>=1.52.2",
+    "docker>=7.1.0",
+    "uvicorn[standard]>=0.38.0",
+    "fastapi>=0.122.0",
+    "prometheus-client>=0.23.1",
+    "scikit-learn>=1.7.2",
 ]
 
 [dependency-groups]
 # (2) MLOps + klassische ML: mittel-schwer, aber nicht TF
 mlops = [
-    "dagster>=1.12.3",
-    "dagster-webserver>=1.12.3",
-    "dagster-dg-cli",
     "mlflow>=3.6.0",
     "scikit-learn>=1.7.2",
     "scipy>=1.10",

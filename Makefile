@@ -1,7 +1,7 @@
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-# PROJECT := monitoring
+PROJECT := rakuten
 
-.PHONY: setup_env repo_push mlflow etl all_docker stop_docker #  etl create_embeds evaluation fire-alert reports  
+.PHONY: setup_env repo_push mlflow etl all_docker stop_docker streamlit #  etl create_embeds evaluation fire-alert reports  
 
 
 setup_env:
@@ -17,24 +17,25 @@ mlflow_local:
 # 	???
 
 airflow_docker:
-	docker compose -p $(PROJECT) --env-file env/airflow.env -f $(ROOT)/docker-compose.yaml up --build -d
+	docker compose -p $(PROJECT) --env-file env/airflow.env -f $(ROOT)/docker-compose.airflow.yaml up --build -d
 
 airflow_stop:
-	docker compose -f $(ROOT)/docker-compose.yaml down
+	docker compose -p $(PROJECT) -f $(ROOT)/docker-compose.yaml down
 
 api_docker:
 	docker compose -p $(PROJECT) -f $(ROOT)/docker-compose.api.yaml up --build -d
 
 api_stop:
-	docker compose -f $(ROOT)/docker-compose.api.yaml down
+	docker compose -p $(PROJECT)  -f $(ROOT)/docker-compose.api.yaml down
 
 monitoring_docker:
 	docker compose -p $(PROJECT) -f $(ROOT)/docker-compose.monitoring.yaml up --build -d
 
 monitoring_stop:
-	docker compose -f $(ROOT)/docker-compose.monitoring.yaml down
+	docker compose -p $(PROJECT) -f $(ROOT)/docker-compose.monitoring.yaml down
 
-
+streamlit:
+	streamlit run $(ROOT)/streamlit/app.py --server.port=8501 --server.address=0.0.0.0
 # -------------------------------------------------------------------------
 
 # ROOT := $(CURDIR)

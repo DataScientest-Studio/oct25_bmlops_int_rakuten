@@ -92,6 +92,8 @@ volumes:
   postgres-db-volume:
 
 networks:
-  default:
-    driver: bridge
-    name: rakuten_network
+  # default:
+  #   driver: bridge
+  #   name: rakuten_network
+  rakuten_network:
+    external: true
