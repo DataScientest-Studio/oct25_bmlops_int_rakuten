@@ -116,12 +116,10 @@ uv init
 source .venv/bin/activate
 
 # (2-A) install core dependencies
-make setup
-```
-(then 'enter' in shell)
+make setup         # then 'enter' in shell
 
-```bash
 # (2-B) install other dependency group/-s
-make setup
-(then enter 'mlops', 'dev', 'heavy' or 'all' + 'enter' in shell;
+make setup         # then enter 'mlops', 'dev', 'heavy' or 'all' + 'enter' in shell
+```
+
 see [pyproject.toml](pyproject.toml) for details)
