@@ -108,7 +108,8 @@ Feature Pipeline                                 Training / Recommendation Pipel
 
 ---
 
-## Setup Guide
+## Setup Guide (Project)
+see [pyproject.toml](pyproject.toml) for details
 
 ```bash
 # (1) create & activate virtual environment
@@ -121,5 +122,7 @@ make setup         # then 'enter' in shell
 # (2-B) install other dependency group/-s
 make setup         # then enter 'mlops', 'dev', 'heavy' or 'all' + 'enter' in shell
 ```
-<p><small>see [pyproject.toml](pyproject.toml) for details
-</p>
+---
+
+## Setup Guide (Streamlit app)
+
