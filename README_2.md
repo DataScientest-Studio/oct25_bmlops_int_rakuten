@@ -15,7 +15,7 @@ The dataset is publicly available as part of the challenge and can be accessed h
 
 **Dataset characteristics**
 - ~99,000 product entries
-- >1,000 product classes (highly imbalanced)
+- ">1,000 product classes (highly imbalanced)"
 - Text data: ~60 MB
 - Image data: ~2.2 GB
 - Noisy real-world e-commerce data
@@ -121,8 +121,5 @@ make setup
 
 # (2-B) install other dependency group/-s
 make setup
-(then enter... + 'enter' in shell:
-- 'mlops' for ...
-- 'dev' for ...   
-- '') 
-
+(then enter 'mlops', 'dev', 'heavy' or 'all' + 'enter' in shell;
+see [pyproject.toml](pyproject.toml) for details)
