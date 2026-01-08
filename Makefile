@@ -20,7 +20,7 @@ airflow_docker:
 	docker compose -p $(PROJECT) --env-file env/airflow.env -f $(ROOT)/docker-compose.airflow.yaml up --build -d
 
 airflow_stop:
-	docker compose -p $(PROJECT) -f $(ROOT)/docker-compose.yaml down
+	docker compose -p $(PROJECT) -f $(ROOT)/docker-compose.airflow.yaml down
 
 api_docker:
 	docker compose -p $(PROJECT) -f $(ROOT)/docker-compose.api.yaml up --build -d
