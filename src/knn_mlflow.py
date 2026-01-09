@@ -41,14 +41,14 @@ def build_knn(num_k=10, combine_weight=0.6):
     mlflow.log_param("combine_weight", combine_weight)
 
 
-    df = dh.load_cursor("products", ["productid", "text_embed", "embedding_str"])
+    df = dh.load_cursor("products", ["productid", "text_embed", "embedding_img"])
     docs = df.sort_values("productid").to_dict(orient="records")
     df2 = df.sort_values("productid")
 
 
     input_path = sm_folder / "products_input.parquet"
     df2.to_parquet(input_path, index=False)
-    mlflow.log_artifact(input_path)
+    #mlflow.log_artifact(input_path)
 
     mlflow.log_param("input_rows", len(df2))
     mlflow.log_param("input_cols", len(df2.columns))
@@ -66,9 +66,16 @@ def build_knn(num_k=10, combine_weight=0.6):
     np.save(sm_folder / f"knn_top{num_k}_neighbors.npy", topk_knn)
     save_pickle2(idx_map, sm_folder / "knn_id_to_index.pkl")
 
-    mlflow.log_artifact(sm_folder / f"knn_top{num_k}_neighbors.npy")
-    mlflow.log_artifact(sm_folder / "knn_embed_comb.npy")
-    mlflow.log_artifact(sm_folder / "idx_map.pkl")
+    #mlflow.log_artifact(sm_folder / f"knn_top{num_k}_neighbors.npy")
+    #mlflow.log_artifact(sm_folder / "knn_embed_comb.npy")
+    #mlflow.log_artifact(sm_folder / "idx_map.pkl")
+
+    mlflow.log_artifact(input_path, artifact_path="models")
+    mlflow.log_artifact(sm_folder / f"knn_top{num_k}_neighbors.npy", artifact_path="models")
+    mlflow.log_artifact(sm_folder / "knn_embed_comb.npy", artifact_path="models")
+    mlflow.log_artifact(sm_folder / "idx_map.pkl", artifact_path="models")
+
+    
 
     print("[DONE] Saved KNN similarity files and logged to MLflow.")
     return sm_folder, topk_knn, ar_prod

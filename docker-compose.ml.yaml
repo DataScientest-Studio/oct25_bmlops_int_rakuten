@@ -27,7 +27,11 @@ services:
       --allowed-hosts mlflow,mlflow:5000,localhost:5000,127.0.0.1
       --cors-allowed-origins "*"
     volumes:
-      - ./mlruns:/mlruns
+      #- ./mlruns:/mlruns
+      #- /home/user/MyMLOps/mlruns:/mlruns
+      #- /home/user/MyMLOps/data:/app/data
+      - /mnt/c/Users/User/Desktop/MyMLOps/data:/app/data
+      - /mnt/c/Users/User/Desktop/MyMLOps/mlruns:/mlruns
     networks:
       - mlops-net
 
@@ -49,6 +53,9 @@ services:
       MLFLOW_TRACKING_URI: http://mlflow:5000
     ports:
       - "6000:6000"
+    volumes:
+      #- /home/user/MyMLOps/data:/app/data
+      - /mnt/c/Users/User/Desktop/MyMLOps/data:/app/data
 
 volumes:
   mongo_data:

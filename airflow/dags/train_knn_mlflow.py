@@ -9,7 +9,7 @@ import subprocess
 with DAG(
     dag_id="train_knn_with_mlflow",
     start_date=datetime(2024, 1, 1),
-    schedule=None,
+    schedule_interval="@monthly",
     catchup=False,
     tags=["mlops", "mlflow"],
 ) as dag:

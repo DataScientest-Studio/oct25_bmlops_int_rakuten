@@ -14,7 +14,7 @@ ENV PATH="/root/.local/bin:$PATH"
 RUN pip install --upgrade pip
 
 # ---- Basis + MLOps Pakete ----
-RUN pip install \
+RUN pip install --no-cache-dir \
     numpy>=1.26 \
     pandas>=2.3.3 \
     tqdm>=4.67.1 \

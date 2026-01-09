@@ -16,7 +16,7 @@ def create_array(docs, normalize=None):
     product_ids = np.array([d["productid"] for d in docs], dtype=np.int64)
     text_emb = np.array([d["text_embed"] for d in docs], dtype=np.float32)
     #image_emb= np.array([d["embedding_str"] for d in docs], dtype=np.float32)
-    image_emb = np.array([parse_embedding(d["embedding_str"]) for d in docs], dtype=np.float32)
+    image_emb = np.array([parse_embedding(d["embedding_img"]) for d in docs], dtype=np.float32)
     # create id to index mapping
     id_to_index = {pid: i for i, pid in enumerate(product_ids)}
 

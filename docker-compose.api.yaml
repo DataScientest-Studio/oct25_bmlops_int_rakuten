@@ -1,0 +1,16 @@
+services:
+  knn_api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: knn_api
+    ports:
+      - "8001:8001"
+    volumes:
+      - /mnt/c/Users/User/Desktop/MyMLOps/data:/app/data
+    networks:
+      - mlops-net
+
+networks:
+  mlops-net:
+    external: true
