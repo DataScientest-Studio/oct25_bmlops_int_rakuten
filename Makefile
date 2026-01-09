@@ -28,6 +28,12 @@ api_docker:
 api_stop:
 	docker compose -p $(PROJECT)  -f $(ROOT)/docker-compose.api.yaml down
 
+ml_docker:
+	docker compose -p $(PROJECT) -f $(ROOT)/docker-compose.ml.yaml up --build -d
+
+ml_stop:
+	docker compose -p $(PROJECT)  -f $(ROOT)/docker-compose.api.yaml down
+	
 monitoring_docker:
 	docker compose -p $(PROJECT) -f $(ROOT)/docker-compose.monitoring.yaml up --build -d
 

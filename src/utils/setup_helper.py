@@ -18,26 +18,45 @@ from functools import wraps
 from .settings import session
 
 
-def load_env_vars():
+def load_env_vars(files=None):
     """
-    Load environment variables from an .env file if available.
+    Load environment variables from .env files if available.
     """
+    env_list = [".env.session"]
 
-    if session.env_loaded:
-        return
+    if not session.env_loaded:
+        env_list.append(".env")
+        
+    if files:
+        if isinstance(files, Path):
+            env_list.append(files)
+        
+        if isinstance(files, list):
+            for f in files:           
+                if isinstance(f, (str, Path)):
+                    env_list.append(f)
+                else:
+                    print(f"Invalid data type: {f} is {type(f)}")
     
-    env_path = find_dotenv()
-    if env_path:
-        load_dotenv(env_path)
-        print("Variables from .env loaded")
+    for env in env_list:
+        env_path = find_dotenv(filename=env)
+        if env_path:
+            load_dotenv(env_path)
+            print(f"Variables from {env} loaded")
 
-    session_path = find_dotenv(filename=".env.session")
-    if session_path and os.path.exists(session_path):
-        load_dotenv(session_path, override=True)
-        print("Variables from .env.session loaded")
-    
-    session.env_loaded = True
+        if env == ".env":
+            session.env_loaded = True
+            session.save_session()
  
+    
+    #         f_path = find_dotenv(filename=".env.session")
+
+    # session_path = find_dotenv(filename=".env.session")
+    # if session_path and os.path.exists(session_path):
+    #     load_dotenv(session_path, override=True)
+    #     print("Variables from .env.session loaded")
+    
+    
 
 def shorten_path(path, n=3):
     p = Path(path).parts

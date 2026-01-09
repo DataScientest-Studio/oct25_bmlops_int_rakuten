@@ -28,7 +28,7 @@ def show():
 
     img = Path("static files/resnet.png")
     code = Path("src/test.py").read_text(encoding="utf-8")
-
+    
     with col1:
         st.markdown("""
         #### ETL (extract - transform - load) 
