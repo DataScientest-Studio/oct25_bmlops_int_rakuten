@@ -1,45 +1,54 @@
 import streamlit as st
 from pathlib import Path
-
+import requests
+etl_trigger_URL = "http://127.0.0.1:8001/etl/trigger"
 def show():
-    st.header("📑 Project Status (2)")
+    st.header("FastAPI")
+    st.subheader("General Purpose")
     st.markdown("""
-    #### (2) APIs
-    
-    **FastAPI**   
+    - Python framework for quickly building web APIs   
     - Lightweight HTTP interface   
-    - Triggers ETL or processing pipelines   
     - Decouples UI from orchestration
     """)
      
     ## 
     # col1, col2, col3 = st.columns(3, border=True)
-
+    
     # Bsp.-Dateien für Testzwecke
-    img = Path("/workspaces/oct25_bmlops_int_rakuten/static files/resnet.png")
+    img_etl_trigger = Path("src/screenshots/etl_trigger.png")
+    img_training = Path("src/screenshots/training.png")
+    img_recos = Path("src/screenshots/recommend.png")
     code = Path("src/test.py").read_text(encoding="utf-8")
-
+    st.subheader("Endpoints")
     with st.expander("trigger 'etl-pipeline'"):
-        
+        with st.popover("ETL-trigger"):
+            st.image(str(img_etl_trigger), caption="ETL-trigger")
+
+        st.divider()
+
         with st.expander("Code"):
             st.code(code, language="python")
         
         st.divider()
        
         if st.button("trigger API call", key="etl"):
-            st.write("add LINK to Airflow")
-        else:
-            st.write("")
+            try:
+        # POST request an FastAPI
+                resp = requests.post(etl_trigger_URL)
+                if resp.status_code == 200:
+                    st.success("Pipeline erfolgreich gestartet!")
+                else:
+                    st.error(f"Fehler beim Starten: {resp.status_code} - {resp.text}")
+            except Exception as e:
+                st.error(f"API-Call fehlgeschlagen: {e}")
        
-        # st.divider()
-
-        # st.markdown("""
-        # scheduled execution  --> 🟢 every 30d
-        # triggered by         --> 🟢 FileSensor + API call
-        # """)
     
     with st.expander("trigger 'create similarity matrtix'"):
-    
+        with st.popover("training trigger"):
+            st.image(str(img_training), caption="training trigger")
+
+        st.divider()
+
         with st.expander("Code"):
             st.code(code, language="python")
         
@@ -50,24 +59,18 @@ def show():
         else:
             st.write()
     
-    # with col3:
-    #     st.markdown("""
-    #     ### Make recommendations 
-    #     """)
-        
-    #     st.divider()
-        
-    #     # with st.popover("Graph"):
-    #     #     st.image()
-        
-    #     st.divider()
-       
-    #     with st.popover("DAG"):
-    #         st.code(code, language="python")
-       
-    #     st.divider()
+    with st.expander("ask for recommendations"):
+        with st.popover("recommendations"):
+            st.image(str(img_recos), caption="recommendations")
 
-    #     st.markdown("""
-    #     scheduled execution  --> 🟢 every 30d
-    #     triggered by         --> 🟢 FileSensor + API call
-    #     """)
+        st.divider()
+
+        with st.expander("Code"):
+            st.code(code, language="python")
+        
+        st.divider()
+       
+        if st.button("trigger API call", key="Recos"):
+            st.write("add LINK to Airflow")
+        else:
+            st.write()
