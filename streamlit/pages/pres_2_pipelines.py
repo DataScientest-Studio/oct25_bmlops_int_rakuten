@@ -52,10 +52,7 @@ def show():
 
         st.markdown("""
         scheduled execution  --> 🟢 every 30d
-        triggered by         --> 🟢 FileSensor + API call
-        
-        [ADD SHOWCASE MOMENT "FileSensor" 
-        + LINK TO AIRFLOW (st.link_button(name, url))]
+        triggered by         --> 🟢 API call
         """)
     
     with col2:
@@ -81,7 +78,7 @@ def show():
         st.divider()
         st.markdown("""
         scheduled execution  --> 🟢 every 30d
-        triggered by         --> 🟢 FileSensor + API call
+        triggered by         --> 🟢 API call
         """)
     
     st.subheader("(3) Tasks")

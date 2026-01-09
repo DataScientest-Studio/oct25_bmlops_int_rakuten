@@ -1,7 +1,7 @@
 import streamlit as st
 from pathlib import Path
 import requests
-etl_trigger_URL = "http://127.0.0.1:8001/etl/trigger"
+
 def show():
     st.header("FastAPI")
     st.subheader("General Purpose")
@@ -27,22 +27,10 @@ def show():
         st.divider()
 
         with st.expander("Code"):
-            st.code(code, language="python")
+            st.markdown('''query: 'curl -X POST http://localhost:8001/etl/trigger' ''')
+            st.markdown('''answer: '{"status":"Pipeline triggered","dag_run_id":"api_trigger_20260109_145704"}' ''')
         
-        st.divider()
-       
-        if st.button("trigger API call", key="etl"):
-            try:
-        # POST request an FastAPI
-                resp = requests.post(etl_trigger_URL)
-                if resp.status_code == 200:
-                    st.success("Pipeline erfolgreich gestartet!")
-                else:
-                    st.error(f"Fehler beim Starten: {resp.status_code} - {resp.text}")
-            except Exception as e:
-                st.error(f"API-Call fehlgeschlagen: {e}")
-       
-    
+
     with st.expander("trigger 'create similarity matrtix'"):
         with st.popover("training trigger"):
             st.image(str(img_training), caption="training trigger")
@@ -50,14 +38,9 @@ def show():
         st.divider()
 
         with st.expander("Code"):
-            st.code(code, language="python")
+            st.markdown('''query: 'curl -X POST http://localhost:8001/train/trigger' ''')
+            st.markdown('''answer: '{"status":"Training DAG triggered","dag_run_id":"api_trigger_train_20260109_152032"}' ''')
         
-        st.divider()
-       
-        if st.button("trigger API call", key="SimMatrix"):
-            st.write("add LINK to Airflow")
-        else:
-            st.write()
     
     with st.expander("ask for recommendations"):
         with st.popover("recommendations"):
@@ -66,11 +49,8 @@ def show():
         st.divider()
 
         with st.expander("Code"):
-            st.code(code, language="python")
-        
-        st.divider()
-       
-        if st.button("trigger API call", key="Recos"):
-            st.write("add LINK to Airflow")
-        else:
-            st.write()
+            st.markdown('''query: 'curl "http://localhost:8001/recommend/4293237" ' ''')
+            st.markdown('''answer:
+             '{"productid":4293237,"recommendations":
+             [4293237,3226779852,4180534759,1807806498,73334276,2255444083,278528834,46540267,4229642138,4187799604]}' ''')
+    
