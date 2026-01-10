@@ -6,20 +6,11 @@ def show():
 
     # st.write("{text from report}")
 
-    tabs = st.tabs(["Context", "Scope"])
+    tabs = st.tabs(["Context", "Table of contents"])
 
     # :material/subdirectory_arrow_right
 
-    with tabs[0]:
-        st.subheader("Context of the project")
-        st.markdown("""
-        Cataloging products according to different data (texts and images) is important for e-commerce since it allows for various applications such 
-        as product recommendation and personalized research. It is then a question of predicting the type code of the products knowing textual data 
-        (designation and description of the products) as well as image data (image of the product).
-                        """)
-
-        
-
+    with tabs[0]:     
         st.subheader("The data")
         st.markdown('''
         - Rakuten Product Dataset
@@ -29,6 +20,7 @@ def show():
             - designation - short description
             - describtion - long description (sometimes missing)
             - imageid - unique identifier for images
+            - prdtypecode - represents the product category
         - Additionally, a ZIP-File containing images for every product was given
         ''')
         
