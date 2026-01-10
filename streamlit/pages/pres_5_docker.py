@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 from pathlib import Path
+from datetime import datetime
 
 # from src.utils import live_command_demo
 
@@ -9,7 +10,7 @@ import subprocess
 
 def live_command_demo(cmd, log_name, mode="a"): # , live=True):
     placeholder = st.empty()
-    
+    start_time = datetime.now()
     # if mode == "new":
     #     edit_mode = "a"
     # elif mode == "write":
@@ -18,14 +19,20 @@ def live_command_demo(cmd, log_name, mode="a"): # , live=True):
     log_file = Path(f"{log_name}.log")
     #     edit_mode = ""
 
-    with open(log_file, mode) as log:
+    with open(log_file, mode, buffering=1) as log:
+        # log.write("")
+        log.write("\n" + "=" * 80 + "\n")
+        log.write(f"[START] {start_time.isoformat()} | CMD: {' '.join(cmd)}\n")
+        log.write("=" * 80 + "\n")
+        log.flush()
+
         process = subprocess.Popen(
             cmd,
             # ["make", "api_docker"],
             stdout=log, # open("build_apis.log", "w"),
             stderr=subprocess.STDOUT,
             text=True
-    )
+            )
 
     # if live:
     while True:
@@ -38,9 +45,25 @@ def live_command_demo(cmd, log_name, mode="a"): # , live=True):
         exit_code = process.poll()
 
         if exit_code is not None:
+            with open(log_file, mode, buffering=1) as log:
+                end_time = datetime.now()
+                duration = (end_time - start_time).total_seconds()
+
+                # --- END MARKER ---
+                log.write("-" * 80 + "\n")
+                log.write(
+                    f"[END] {end_time.isoformat()} | "
+                    f"EXIT CODE: {exit_code} | "
+                    f"DURATION: {duration:.1f}s\n"
+                )
+                log.write("-" * 80 + "\n")
+                log.flush()
+
             break
 
         time.sleep(1)
+
+    
 
     # if error_mark:
     #     lines = log_file.read_text().splitlines()
@@ -152,45 +175,178 @@ def show():
     LOGS = Path("/workspaces/oct25_bmlops_int_rakuten/streamlit/logs")
     LOGS.mkdir(parents=True, exist_ok=True)
     
-    log_apis = LOGS / "build_apis"
+    log_ml = LOGS / "build_ml"
     log_monitoring = LOGS / "build_monitoring"
 
-    left, middle, right = st.columns(3)
+    if "build_running" not in st.session_state:
+        st.session_state.build_running = False
 
+    if "monitoring" not in st.session_state:
+        st.session_state.monitoring = False
     
-    status = st.status("Please, choose a button...", 
-                        state=None,
+    # if "build_ml" not in st.session_state:
+    #     st.session_state.build_running = False
+    
+    top_left, top_middle, top_right = st.columns(3)
+    bottom_left, bottom_middle, bottom_right = st.columns(3)
+
+    status = st.status("Please, choose a button to build Docker containers...", 
+                        state="complete",
                         expanded=True)
 
-    if left.button("build APIs", width="stretch", key="api"):
-        cmd = ["make", "api_docker"]
+    # ------------
+    # TOP ROW  
+    # ------------ 
+    # top right
+    options_dict = {
+        0: "append",
+        1: "write"
+    }
+    file_mode = top_right.pills(
+        "file edit mode",
+        options = options_dict.keys(),
+        format_func=lambda option: options_dict[option],
+        selection_mode="single"
+    )
 
-        status.update("Running API build...", state="running")
 
-        exit_code = live_command_demo(cmd, log_apis)
+    if top_left.button(
+                "build MLflow", 
+                width="stretch", 
+                key="ml",
+                disabled=st.session_state.build_running
+                ): # and not st.session_state.build_running:
+        
+        st.session_state.build_running = True
+
+        cmd = ["make", "ml_docker"]
+
+        status.update(label="Running MLflow build...", state="running")
+
+
+        exit_code = live_command_demo(cmd, log_ml, mode=file_mode)
 
         if exit_code == 0:
-            status.update(label="Build finished", state="complete")
-            st.success("Building API containers finished successfully.")
+            status.update(
+                label="Building MLflow containers finished successfully.", 
+                state="complete",
+                expanded=False
+                )
+            # st.success("Building API containers finished successfully.")
         else:
-            status.update(label="Build failed", state="error")
-            st.error(f"Building API containers failed (exit code {exit_code}).")
+            status.update(
+                label=f"Building MLflow containers failed (exit code {exit_code}).", 
+                state="error",
+                expanded=True,
+                )
+            st.error(f"Building MLflow containers failed (exit code {exit_code}).")
 
-    if middle.button("build monitoring", width="stretch", key="monitoring"):
-        cmd = ["make", "api_monitoring"]
+        st.session_state.build_running = False
 
-        status.update("Running monitoring build...", state="running")
-        exit_code = live_command_demo(cmd, log_apis)
+    if top_middle.button(
+                    "build monitoring", 
+                    width="stretch", 
+                    key="monitoring",
+                    disabled=st.session_state.build_running
+                    ): #  and not st.session_state.build_running:
+
+        st.session_state.build_running = True
+
+        cmd = ["make", "monitoring_docker"]
+
+        status.update(label="Running monitoring build...", state="running")
+        exit_code = live_command_demo(cmd, log_monitoring, mode=file_mode)
 
         if exit_code == 0:
-            status.update(label="Build finished", state="complete")
-            st.success("Building monitoring containers finished successfully.")
+            status.update(
+                label="Building monitoring containers finished successfully.", 
+                state="complete",
+                expanded=False
+                )
         else:
-            status.update(label="Build failed", state="failed")
-            st.error(f"Building monitoring containers failed (exit code {exit_code}).")
+            status.update(
+                label=f"Building monitoring containers failed (exit code {exit_code}).", 
+                state="error",
+                expanded=True,
+                )
 
-    if right.button("reset", type="tertiary", icon="🔥"):
-        status.upate("Status reset. choose a button...", state=None)
+        st.session_state.build_running = False
+        st.session_state.monitoring = True
+
+    
+    # ("reset", type="tertiary", icon="🔥"):
+        # st.session_state.build_running = False
+        # status.update(
+        #         label="Status reset. choose a button...", 
+        #         state="complete",
+        #         expanded=False)
+
+    # ------------
+    # BOTTOM ROW  
+    # ------------ 
+    if bottom_left.button(
+                "remove MLflow", 
+                width="stretch", 
+                key="ml_remove",
+                disabled=st.session_state.build_running
+                ): #  and not st.session_state.build_running:
+        
+        st.session_state.build_running = True
+
+        cmd = ["make", "ml_stop"]
+
+        status.update(label="Running MLflow removal...", state="running")
+
+        exit_code = live_command_demo(cmd, log_ml, mode=file_mode)
+
+        if exit_code == 0:
+            status.update(
+                label="Removing AMLflow containers finished successfully.", 
+                state="complete",
+                expanded=False
+                )
+            # st.success("Building API containers finished successfully.")
+        else:
+            status.update(
+                label=f"Removing MLflow containers failed (exit code {exit_code}).", 
+                state="error",
+                expanded=True,
+                )
+            # st.error(f"Building API containers failed (exit code {exit_code}).")
+
+        st.session_state.build_running = False
+        # st.session_state.api = False
+
+    if bottom_middle.button(
+                    "remove monitoring", 
+                    width="stretch", 
+                    key="monitoring_remove",
+                    disabled=st.session_state.build_running
+                    ) and not st.session_state.build_running:
+
+        st.session_state.build_running = True
+
+        cmd = ["make", "monitoring_stop"]
+
+        status.update(label="Running monitoring removal...", state="running")
+        exit_code = live_command_demo(cmd, log_monitoring, mode=file_mode)
+
+        if exit_code == 0:
+            status.update(
+                label="Removing monitoring containers finished successfully.", 
+                state="complete",
+                expanded=False
+                )
+        else:
+            status.update(
+                label=f"Removing monitoring containers failed (exit code {exit_code}).", 
+                state="error",
+                expanded=True,
+                )
+
+        st.session_state.build_running = False
+        st.session_state.monitoring = False
+
 
         # variante B
         # import logging

@@ -5,6 +5,7 @@ def live_command_demo(cmd, log_file): # , live=True):
     placeholder = st.empty()
     
     with open(log_file, "w") as log:
+        
         process = subprocess.Popen(
             cmd,
             # ["make", "api_docker"],
