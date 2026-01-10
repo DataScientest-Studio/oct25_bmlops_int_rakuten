@@ -18,30 +18,35 @@ def show():
         (designation and description of the products) as well as image data (image of the product).
                         """)
 
+        
+
+        st.subheader("The data")
+        st.markdown('''
+        - Rakuten Product Dataset
+        - Consists of approximately 99.000 product listings (85k train and 14k test)
+        - For each product, the following information where given (CSV):
+            - productid - unique identifier
+            - designation - short description
+            - describtion - long description (sometimes missing)
+            - imageid - unique identifier for images
+        - Additionally, a ZIP-File containing images for every product was given
+        ''')
+        
+        st.subheader("The model")
+        st.markdown('''
+        - Recommender system
+        - Create embeddings for image and text data and combine them -> no training in classical sense
+        - Recommendation based on the embeddings with the closest distance
+        - Evaluation of the model based on how many of the 10 best recommendations (for each product) have the same prdtypecode -> only use train data
+        ''')
+
     with tabs[1]:
-        st.subheader("Scope of the project")
+        st.subheader("Table of Contents")
         st.markdown("""
-        (Almost) completely covered 
-        - Pipelines (ETL, 'training', recommendation)
-        - Orchestration (**Airflow**)
+        - Orchestration of Pipelines (ETL, 'training') (**Airflow**)
         - API Deployment (**FastAPI**)
-        - Store data in databases (**SQLite**, **MongoDB**)
         - Experiment tracking (**MLflow**)
         - Containerisation / Microservice architecture (**Docker**)
         - Monitoring & Maintenance (**Prometheus**, **Grafana**, **Node-explorer**) 
-        
-        On-going 
-        - API security (BasicAuth or OAuth2)
-        - CI/CD pipelines (**GitHub Actions**)
-        - Unit Testing
-        - Portability (**AMI**, **Terraform**)
-
-        Not yet started and future plans
-        - Scalability (**Kubernetes**)
-        - Product Classification and Clustering
-        - Testing other models and 'Model' optimization (**Optuna**)
-        - Adding AI generated data on 'products' (incl. agreement-filtered pseudo-labelling)
-        - Adding AI generated data on 'customers', 'baskets' and/or 'orders'  
-        --> creating an hybrid-approach recommendation system
-
+        - On-going
         """)
