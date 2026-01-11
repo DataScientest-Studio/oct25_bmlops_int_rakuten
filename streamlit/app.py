@@ -9,7 +9,7 @@ import streamlit as st
 # from pages import extra_intro
 from pages import (pres_0_home, pres_1_intro , pres_2_pipelines, pres_3_apis,
                     pres_4_mlflow, pres_5_docker, pres_6_monitoring, 
-                    pres_7_on_going, pres_8_take_home_msg) # , pres_3_study_design,  #, results_exemple_train, results_exemple_test                   # pages for 'extras'
+                    pres_7_conclusion, pres_8_take_home_msg) # , pres_3_study_design,  #, results_exemple_train, results_exemple_test                   # pages for 'extras'
 
                     
 def clear_others(active_key):
@@ -85,7 +85,7 @@ PAGES_PRESENTATION = {
     "📈 MLflow": pres_4_mlflow.show,
     "🧠 Docker": pres_5_docker.show,
     "📊 Monitoring": pres_6_monitoring.show,
-    " On-going": pres_7_on_going.show,
+    " On-going": pres_7_conclusion.show,
     " Take home message": pres_8_take_home_msg.show
     # "🧠 Results (Training)": results_exemple_train.show,
     # "📈 Results (Table)": pres_4_results_table.show,

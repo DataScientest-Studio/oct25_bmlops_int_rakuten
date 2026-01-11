@@ -3,21 +3,21 @@ from pathlib import Path
 
 def show():
     st.header("Pipeline and Orchestration with Airflow")
-    st.subheader("(1) Purposes")
+    st.subheader("Purposes")
     st.markdown("""
     - Orchestrates and automates data preprocessing and feature pipelines via DAGs
     - Handles scheduling and retries of ML processes 
     - Ensures reproducibility and traceability   
     """
     )
-    st.subheader("(2) Benefits")
-    st.markdown("""
-    - Workflows defined as code (Python) → easy to maintain and version
-    - Clear visualization of pipelines (DAGs) via web UI
-    - Strong error handling (retries, alerts, logging)   
-    - Integrates well with MLOps tools (e.g. MLflow, Docker)
-    """
-    )
+    #st.subheader("(2) Benefits")
+    #st.markdown("""
+    #- Workflows defined as code (Python) → easy to maintain and version
+    #- Clear visualization of pipelines (DAGs) via web UI
+    #- Strong error handling (retries, alerts, logging)   
+    #- Integrates well with MLOps tools (e.g. MLflow, Docker)
+    #"""
+    #)
 
     ## 
     col1, col2 = st.columns(2, border=True)
@@ -119,8 +119,8 @@ def show():
     st.markdown("""
     - Extracts embeddings from MongoDB and combines them 
     - Creates Similarity Matrix with KNN
-    - Stores Arrays, Mappings and Top-K-Neighbours locally
-    - Logs Parameters and artefatcs in MLflow
+    - Stores Mappings and Top-K-Neighbours locally
+    - Logs Parameters in MLflow
     """
     )
     st.caption("train_knn (2)")

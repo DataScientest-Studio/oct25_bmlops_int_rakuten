@@ -20,7 +20,7 @@ def show():
             - designation - short description
             - describtion - long description (sometimes missing)
             - imageid - unique identifier for images
-            - prdtypecode - represents the product category
+            - prdtypecode - represents the product category (only available for train data)
         - Additionally, a ZIP-File containing images for every product was given
         ''')
         
