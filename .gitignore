@@ -110,3 +110,6 @@ _backup/pyproject copy.toml
 
 
 git config --get-all user.name [0ms]
+streamlit/src/codes/setup_ami.sh
+streamlit/src/codes/setup_code_server.sh
+streamlit/src/codes/ssm_connect.sh

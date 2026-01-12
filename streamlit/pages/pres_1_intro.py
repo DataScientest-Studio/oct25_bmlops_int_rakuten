@@ -40,10 +40,10 @@ def show():
         **(1) Automated processes** --> Pipelines + orchestration  
         **(2) User interactions possible** --> API deployment + security   
         **(3) File and Data storage** --> Databases   
-        **(4) 'Best' Model available and ensured** --> Model selection and experiment tracking   
+        **(4) 'Best' Model available and ensured** --> Model selection, model optimisation and experiment tracking   
         **(5) Monitoring & Maintenance** --> wrt infrastructure, application and model   
         **(6) Reliability** --> CI/CD pipelines and Unit testing   
-        **(7) Portability and Scalability** --> quick adaption to short-/long-term changes and fluctuations 
+        **(7) Availability, Portability and Scalability** --> quick adaption to short-/long-term changes and fluctuations 
 
         - Orchestration of Pipelines (ETL, 'training') (**Airflow**)
         - API Deployment (**FastAPI**)

@@ -17,7 +17,7 @@ presentation = st.sidebar.radio(
     options=[
         "🏠 Home",
         "🧭 Introduction",
-        "🛠️ Pipelines & Airflow",
+        "🛠️ Pipeline & Airflow",
         "🔌 APIs",
         "🧪 MLflow",
         "📦 Docker",

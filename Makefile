@@ -1,7 +1,7 @@
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 PROJECT := rakuten
 
-.PHONY: setup_env repo_push traffic mlflow etl all_docker stop_docker streamlit #  etl create_embeds evaluation fire-alert reports  
+.PHONY: setup_env mlflow_local traffic all_stop all_remove airflow_docker airflow_stop api_docker api_stop ml_stop ml_docker streamlit monitoring_docker monitoring_stop
 
 
 setup_env:
@@ -10,20 +10,14 @@ setup_env:
 mlflow_local:
 	${ROOT}/scripts/0_setup_mlflow.sh 
 
-# docker_all: 
-# 	docker compose -p $(PROJECT) --env-file env-f $(ROOT)/docker-compose.yaml up --build -d
-
-# docker_stop:
-# 	???
-
 traffic:
 	python3 streamlit/src/generate_traffic.py
 
 all_stop:
-	docker stop $(docker ps -a -q)
+	@docker ps -aq | xargs -r docker stop
 
 all_remove:
-	docker rm -v $(docker ps -a -q)
+	@docker ps -aq | xargs -r docker rm -v
 
 airflow_docker:
 	docker compose -p $(PROJECT) --env-file env/airflow.env -f $(ROOT)/docker-compose.airflow.yaml up --build -d
@@ -51,49 +45,3 @@ monitoring_stop:
 
 streamlit:
 	streamlit run $(ROOT)/streamlit/app.py --server.port=8501 --server.address=0.0.0.0
-# -------------------------------------------------------------------------
-
-# ROOT := $(CURDIR)
-# ENV ?= core 
-# N_NEIGHBORS ?= 5
-# MSG ?= auto
-# MODE == 
-# NUM ==
-
-# stop_all_docker: 
-# 	docker compose -p $(PROJECT) -f $(ROOT)/docker-compose.yaml down
-
-# repo_push:
-# 	bash "${ROOT}/scripts/0_repo_push.sh" 
-
-# etl:
-# 	bash "${ROOT}/scripts/1_ETL.sh"
-
-
-# evaluation:
-# 	docker compose -p $(PROJECT)-f $(ROOT)/docker-compose.eval.yaml up --build -d
-
-# fire-alert:
-# 	docker compose -p $(PROJECT) -f $(ROOT)/docker-compose.yaml stop bike-api
-
-# reports:
-# 	python3 $(ROOT)/src/main_drift.py
-
-
-# create_embeds:
-# 	bash ${ROOT}/scripts/2_create_embeds.sh 
-
-# data_split:
-# 	bash ${ROOT}/scripts/0_data_split.sh ${MODE}=split ${NUM}
-
-# sample_data:
-# 	bash ${ROOT}/scripts/0_sample_data.sh ${MODE}=split ${NUM}
-
-# create_sim_mat:
-# 	bash ${ROOT}/src/3_create_SimMat.sh ${ENV} ${N_NEIGHBORS}
-
-# recommend:
-# 	bash ${ROOT}/src/4_recommend.sh ${ENV} ${N_NEIGHBORS}
-
-
-

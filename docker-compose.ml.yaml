@@ -33,3 +33,8 @@ services:
     
 volumes:
   mlflow-postgres-db-volume:
+
+networks:
+  default:
+    driver: bridge
+    name: rakuten_network
