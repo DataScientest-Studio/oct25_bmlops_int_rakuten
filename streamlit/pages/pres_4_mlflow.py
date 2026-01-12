@@ -2,7 +2,7 @@ import streamlit as st
 from pathlib import Path
 
 def show():
-    st.header("MLflow")
+    st.header("🧪 MLflow")
     st.markdown("""   
     - Central tool for tracking ML experiments)   
     - Logs parameters, metrics, models, and artifacts  

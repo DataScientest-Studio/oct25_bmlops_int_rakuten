@@ -2,22 +2,38 @@ from fastapi import FastAPI, HTTPException, Response, Request
 import requests
 import os
 import logging
+import numpy as np
 import time
 from datetime import datetime
 from prometheus_client import Counter, Histogram, generate_latest, CollectorRegistry, Gauge
+from fastapi import Request
+from fastapi.responses import JSONResponse
 
 import utils
 
+
 # --- Logging Configuration ---
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
+
+# logging.basicConfig(
+#     level=logging.INFO,
+#     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+#     handlers=[
+#         logging.StreamHandler(sys.stdout),
+#         logging.FileHandler("app.log", mode="a"),
+#     ],
+# )
+
+# logger = logging.getLogger("api")
+# logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ----- load env-variables -----------
-utils.load_env_vars(f_name=".env.docker")   # for docker deployment
+# utils.load_env_vars(f_name=".env.docker")   # for docker deployment
  
-ws_name = os.getenv("WORKSPACE_NAME")
-proj_name = os.getenv("PROJECT_NAME")
-proj_desc = os.getenv("PROJECT_DESCRIPTION")
+# ws_name = os.getenv("WORKSPACE_NAME")
+# proj_name = os.getenv("PROJECT_NAME")
+# proj_desc = os.getenv("PROJECT_DESCRIPTION")
 
 # --- FastAPI App Initialization ---
 app = FastAPI()
@@ -43,18 +59,98 @@ AIRFLOW_URL = "http://airflow-webserver:8080/api/v1"
 DAG_ID = "data_processing_pipeline"
 
 # --- Pydantic Models for API Input/Output ---
+texts = ["Je vais bien. Comment allez-vous ?",
+            # "Comment ca va?", 
+            "J’ai faim.", 
+            "J’ai soif.",
+            "Ça ne va pas très bien.",
+            "Je m’ennuie. ",
+            "Je n’ai plus envie. J’ai besoin d’une pause.", 
+            "D’accord.", 
+            "Pas d’accord.", 
+            "Je comprends.",
+            "Je ne comprends pas.", 
+           " C’est facile."
+            "C’est difficile.",
+            "Pas de problème.",
+            "Ça marche.",
+            "On verra.",
+            "J’ai oublié.",
+            "Je suis pressé.",
+            "À plus tard."
+            ]
 
+# --- API middle ware --- exception handling ---
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled exception")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc)},
+    )
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger.info(f"START {request.method} {request.url.path}")
+    response = await call_next(request)
+    logger.info(f"END {request.url.path} → {response.status_code}")
+    return response
 
 # --- API Endpoints ---
 @app.get("/")
 def root():
-    return {"message": "FastAPI ETL Trigger Active"}
+    return {"message": "FastAPI ETL Trigger Active", 
+            "status": "ok"}
 
 
-@app.get("/health")
+@app.get("/french")
 def health():
-    return {"status": "ok"}
+    start_time = time.time()
+    status_code = "200"
 
+    try:
+        if not texts:
+            raise RuntimeError("texts is empty")
+        
+        text = np.random.choice(texts, size=1)[0]
+        
+        return {
+            # "status": "ok",
+            "message": str(text)
+            }
+
+    except HTTPException as he:
+        status_code = str(he.status_code)
+        raise
+    except requests.exceptions.RequestException as re:
+        print(f"    - Error sending request {i+1}: {re}")
+    # except Exception as e:
+    #     print(f"    - Unexpected error for request {i+1}: {e}")
+
+    except Exception as e:
+        # print(f"Error during demo: {e}")
+        logger.exception("Health endpoint failed")
+        status_code = "500"
+        raise HTTPException(status_code=500, 
+                    detail=f"Triggering '/health' failed due to an internal error: {e}")
+
+    finally:
+        end_time = time.time()
+        duration = end_time - start_time
+        api_request_duration_seconds.labels(
+                                        endpoint="/health", 
+                                        method="GET", 
+                                        status_code=str(status_code)
+                                        ).observe(duration)
+        api_request_total.labels(
+                            endpoint="/health", 
+                             method="GET", 
+                             status_code=str(status_code)
+                             ).inc()
 
 @app.post("/trigger-etl")
 def trigger_etl():

@@ -1,7 +1,7 @@
 import streamlit as st
 
 def show():
-    st.header("🏠 Introduction")
+    st.header("🧭 Introduction")
     st.write("What is the need for a recommendation app?") 
 
     # st.write("{text from report}")

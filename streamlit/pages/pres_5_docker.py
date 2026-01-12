@@ -3,75 +3,11 @@ import os
 from pathlib import Path
 from datetime import datetime
 
-# from src.utils import live_command_demo
+from src.utils import live_command_demo
 
 import time
 import subprocess
 
-def live_command_demo(cmd, log_name, mode="a"): # , live=True):
-    placeholder = st.empty()
-    start_time = datetime.now()
-    # if mode == "new":
-    #     edit_mode = "a"
-    # elif mode == "write":
-    #     edit_mode = "w"
-    # elif mode == "new":
-    log_file = Path(f"{log_name}.log")
-    #     edit_mode = ""
-
-    with open(log_file, mode, buffering=1) as log:
-        # log.write("")
-        log.write("\n" + "=" * 80 + "\n")
-        log.write(f"[START] {start_time.isoformat()} | CMD: {' '.join(cmd)}\n")
-        log.write("=" * 80 + "\n")
-        log.flush()
-
-        process = subprocess.Popen(
-            cmd,
-            # ["make", "api_docker"],
-            stdout=log, # open("build_apis.log", "w"),
-            stderr=subprocess.STDOUT,
-            text=True
-            )
-
-    # if live:
-    while True:
-#         for _ in range(60):  # Demo-Zeitfenster
-        if log_file.exists():
-            placeholder.code(log_file.read_text(), 
-                            language="text")
-        else:
-            placeholder.info("Waiting for log output...")
-        exit_code = process.poll()
-
-        if exit_code is not None:
-            with open(log_file, mode, buffering=1) as log:
-                end_time = datetime.now()
-                duration = (end_time - start_time).total_seconds()
-
-                # --- END MARKER ---
-                log.write("-" * 80 + "\n")
-                log.write(
-                    f"[END] {end_time.isoformat()} | "
-                    f"EXIT CODE: {exit_code} | "
-                    f"DURATION: {duration:.1f}s\n"
-                )
-                log.write("-" * 80 + "\n")
-                log.flush()
-
-            break
-
-        time.sleep(1)
-
-    
-
-    # if error_mark:
-    #     lines = log_file.read_text().splitlines()
-    #     errors = [l for l in lines if "ERROR" in l or "FAILED" in l]
-    #     if errors:
-    #         st.code("\n".join(errors), language="text")
-
-    return exit_code
 
 make_extract = Path("/workspaces/oct25_bmlops_int_rakuten/streamlit/src/makefile_extract.py").read_text(encoding="utf-8")
 
@@ -83,10 +19,8 @@ docker_compose_ml = Path("/workspaces/oct25_bmlops_int_rakuten/docker-compose.ml
 docker_file_ml = Path("/workspaces/oct25_bmlops_int_rakuten/mlflow/Dockerfile").read_text(encoding="utf-8")
 
 def show():
-    st.header("📑 Project Status (4)")
+    st.header("📦 Docker and microservice architecture")
     st.markdown("""
-    #### (4) Docker and microservice architecture
-    
     **What is the use of 'Docker'?**   
     - Containerized execution of services and applications   
     - Reproducible runtime environments across development and deployment   
@@ -109,7 +43,7 @@ def show():
             - PostgreSQL  
             """)
             
-            with st.popover("**docker-compose.airflow.yaml**"):
+            with st.popover("ℹ️ **docker-compose.airflow.yaml**"):
                 st.code(docker_airflow, language="python")
 
 
@@ -120,10 +54,10 @@ def show():
             - Streamlit  
             """)
             
-            with st.popover("**docker-compose.api.yaml**"):
+            with st.popover("ℹ️ **docker-compose.api.yaml**"):
                 st.code(docker_compose_api, language="python")
             
-            with st.popover("**Dockerfile (API)**"):
+            with st.popover("ℹ️ **Dockerfile (API)**"):
                 st.code(docker_file_api, language="python")
         
         with st.container(border=True):
@@ -134,10 +68,10 @@ def show():
             - prospectively, W&B or similar 
             
             """)
-            with st.popover("**docker-compose.ml.yaml**"):
+            with st.popover("ℹ️ **docker-compose.ml.yaml**"):
                 st.code(docker_compose_ml, language="python")
             
-            with st.popover("**Dockerfile (MLflow)**"):
+            with st.popover("ℹ️ **Dockerfile (MLflow)**"):
                 st.code(docker_file_ml, language="python")
         
         with st.container(border=True):
@@ -150,7 +84,7 @@ def show():
             - Loki (*not yet fully integrated*)
             
             """)
-            with st.popover("**docker-compose.monitoring.yaml**"):
+            with st.popover("ℹ️ **docker-compose.monitoring.yaml**"):
                 st.code(docker_monitoring, language="python")
     
     st.markdown("""
@@ -158,13 +92,13 @@ def show():
     **-->** same project by default --> no network mismatches possible
 
     """)
-    with st.popover("Extract from **Makefile**", width="stretch"):
+    with st.popover("ℹ️ Extract from **Makefile**", width="stretch"):
         st.code(make_extract, language="python")
 
     st.markdown("""
     ---
 
-    **Live Demos**
+    **⚡ Live Demos**
     """)
     # Docker ermöglicht die Containerisierung von Anwendungen, d. h. 
     # Software wird inklusive aller Abhängigkeiten in isolierten, 
@@ -177,12 +111,13 @@ def show():
     
     log_ml = LOGS / "build_ml"
     log_monitoring = LOGS / "build_monitoring"
+    log_docker = LOGS / "docker_status"
 
-    if "build_running" not in st.session_state:
-        st.session_state.build_running = False
+    # if "build_running" not in st.session_state:
+    #     st.session_state.build_running = False
 
-    if "monitoring" not in st.session_state:
-        st.session_state.monitoring = False
+    if "monitoring_running" not in st.session_state:
+        st.session_state.monitoring_running = False
     
     # if "build_ml" not in st.session_state:
     #     st.session_state.build_running = False
@@ -199,25 +134,27 @@ def show():
     # ------------ 
     # top right
     options_dict = {
-        0: "append",
-        1: "write"
+        "append": "a",
+        "write": "w"
     }
-    file_mode = top_right.pills(
+    sel = top_right.pills(
         "file edit mode",
         options = options_dict.keys(),
-        format_func=lambda option: options_dict[option],
-        selection_mode="single"
+        # format_func=lambda option: options_dict[option],
+        selection_mode="single",
+        default="append"
     )
 
+    file_mode = options_dict[sel]
 
     if top_left.button(
                 "build MLflow", 
                 width="stretch", 
                 key="ml",
-                disabled=st.session_state.build_running
+                # disabled=st.session_state.build_running
                 ): # and not st.session_state.build_running:
         
-        st.session_state.build_running = True
+        # st.session_state.build_running = True
 
         cmd = ["make", "ml_docker"]
 
@@ -241,16 +178,16 @@ def show():
                 )
             st.error(f"Building MLflow containers failed (exit code {exit_code}).")
 
-        st.session_state.build_running = False
+        # st.session_state.build_running = False
 
     if top_middle.button(
                     "build monitoring", 
                     width="stretch", 
                     key="monitoring",
-                    disabled=st.session_state.build_running
+                    # disabled=st.session_state.build_running
                     ): #  and not st.session_state.build_running:
 
-        st.session_state.build_running = True
+        # st.session_state.build_running = True
 
         cmd = ["make", "monitoring_docker"]
 
@@ -270,8 +207,8 @@ def show():
                 expanded=True,
                 )
 
-        st.session_state.build_running = False
-        st.session_state.monitoring = True
+        # st.session_state.build_running = False
+        st.session_state.monitoring_running = True
 
     
     # ("reset", type="tertiary", icon="🔥"):
@@ -288,10 +225,10 @@ def show():
                 "remove MLflow", 
                 width="stretch", 
                 key="ml_remove",
-                disabled=st.session_state.build_running
+                # disabled=st.session_state.build_running
                 ): #  and not st.session_state.build_running:
         
-        st.session_state.build_running = True
+        # st.session_state.build_running = True
 
         cmd = ["make", "ml_stop"]
 
@@ -314,17 +251,17 @@ def show():
                 )
             # st.error(f"Building API containers failed (exit code {exit_code}).")
 
-        st.session_state.build_running = False
+        # st.session_state.build_running = False
         # st.session_state.api = False
 
     if bottom_middle.button(
                     "remove monitoring", 
                     width="stretch", 
                     key="monitoring_remove",
-                    disabled=st.session_state.build_running
-                    ) and not st.session_state.build_running:
+          #           disabled=st.session_state.build_running
+                    ):
 
-        st.session_state.build_running = True
+        # st.session_state.build_running = True
 
         cmd = ["make", "monitoring_stop"]
 
@@ -344,9 +281,32 @@ def show():
                 expanded=True,
                 )
 
-        st.session_state.build_running = False
-        st.session_state.monitoring = False
+        # st.session_state.build_running = False
+        st.session_state.monitoring_running = False
 
+    if bottom_right.button(
+                        "docker check",
+                        width="stretch",
+                        key="docker_check"
+                    ):
+
+        cmd = ["docker", "ps", "-a"]
+
+        status.update(label="Checking status of contaner, volumes, network,...", state="running")
+        exit_code = live_command_demo(cmd, log_docker, mode=file_mode)
+
+        if exit_code == 0:
+            status.update(
+                label="Docker status check completed.", 
+                state="complete",
+                expanded=False
+                )
+        else:
+            status.update(
+                label=f"Checking docker status failed (exit code {exit_code}).", 
+                state="error",
+                expanded=True,
+                )
 
         # variante B
         # import logging

@@ -3,7 +3,7 @@ from pathlib import Path
 import requests
 
 def show():
-    st.header("FastAPI")
+    st.header("🔌 FastAPI")
     st.subheader("General Purpose")
     st.markdown("""
     - Python framework for quickly building web APIs   

@@ -2,7 +2,8 @@ import streamlit as st
 from pathlib import Path
 
 def show():
-    st.header("Pipeline and Orchestration with Airflow")
+
+    st.header("🛠️ Pipeline and Orchestration with Airflow")
     st.subheader("Purposes")
     st.markdown("""
     - Orchestrates and automates data preprocessing and feature pipelines via DAGs

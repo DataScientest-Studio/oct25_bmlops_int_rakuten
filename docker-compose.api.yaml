@@ -22,16 +22,16 @@ services:
     networks:
       - rakuten_network
   
-  streamlit:
-    build: 
-      context: .
-      dockerfile: streamlit/Dockerfile
-    container_name: streamlit
-    ports:
-      - "8501:8501"
-    restart: always
-    networks:
-      - rakuten_network
+  # streamlit:
+  #   build: 
+  #     context: .
+  #     dockerfile: streamlit/Dockerfile
+  #   container_name: streamlit
+  #   ports:
+  #     - "8501:8501"
+  #   restart: always
+  #   networks:
+  #     - rakuten_network
     # depends_on:
     #   fastapi:
     #     condition: service_healthy

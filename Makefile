@@ -1,7 +1,7 @@
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 PROJECT := rakuten
 
-.PHONY: setup_env repo_push mlflow etl all_docker stop_docker streamlit #  etl create_embeds evaluation fire-alert reports  
+.PHONY: setup_env repo_push traffic mlflow etl all_docker stop_docker streamlit #  etl create_embeds evaluation fire-alert reports  
 
 
 setup_env:
@@ -15,6 +15,15 @@ mlflow_local:
 
 # docker_stop:
 # 	???
+
+traffic:
+	python3 streamlit/src/generate_traffic.py
+
+all_stop:
+	docker stop $(docker ps -a -q)
+
+all_remove:
+	docker rm -v $(docker ps -a -q)
 
 airflow_docker:
 	docker compose -p $(PROJECT) --env-file env/airflow.env -f $(ROOT)/docker-compose.airflow.yaml up --build -d
