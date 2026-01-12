@@ -1,8 +1,13 @@
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 PROJECT := rakuten
 
-.PHONY: setup_env mlflow_local traffic all_stop all_remove airflow_docker airflow_stop api_docker api_stop ml_stop ml_docker streamlit monitoring_docker monitoring_stop
+.PHONY: req_files setup_env mlflow_local traffic all_stop all_remove airflow_docker airflow_stop api_docker api_stop ml_stop ml_docker streamlit monitoring_docker monitoring_stop
 
+req_files:
+	uv pip compile pyproject.toml -o requirements.txt
+	uv pip compile pyproject.toml --group mlops -o requirements-mlops.txt
+	uv pip compile pyproject.toml --group heavy -o requirements-heavy.txt
+	uv pip compile pyproject.toml --group mlops --group heavy --group dev  -o requirements-dev.txt
 
 setup_env:
 	${ROOT}/scripts/0_init_setup.sh
