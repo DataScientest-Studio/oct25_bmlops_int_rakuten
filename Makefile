@@ -11,7 +11,7 @@ mlflow_local:
 	${ROOT}/scripts/0_setup_mlflow.sh 
 
 traffic:
-	python3 streamlit/src/generate_traffic.py
+	python3 -u streamlit/src/generate_traffic.py
 
 all_stop:
 	@docker ps -aq | xargs -r docker stop
