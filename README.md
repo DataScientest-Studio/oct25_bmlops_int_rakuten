@@ -208,19 +208,22 @@ pip install -r requirements-dev.txt
 # (1) enter the WSL environment
 wsl
 
-# (2) build the image for training with knn
+# (2) create a common docker-network
+docker network create mlops-net
+
+# (3) build the image for training with knn
 #note: to ensure that the results are stored locally, you have to change the mounted volumes in the docker-compose.ml.yaml-file (lines 28 and 29 as well as line 52)
 docker compose -f docker-compose.ml.yaml build
 
-# (3) run the containers containing MLflow, MongoDB and knn_training
+# (4) run the containers containing MLflow, MongoDB and knn_training
 docker compose -f docker-compose.ml.yaml up
 -> MLflow is now available on http://localhost:5000
 
-# (4) On another terminal, activate WSL and switch to the Airflow-folder
+# (5) On another terminal, activate WSL and switch to the Airflow-folder
 wsl
 cd airflow
 
-# (5) build and run containers needed for Airflow
+# (6) build and run containers needed for Airflow
 #note: you have to change agein the mounted volumes in the airflow/docker-compose.yaml-file (lines 23-29 and 105-112)
 docker compose build
 docker compose run --rm airflow-init airflow db init
