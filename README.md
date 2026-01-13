@@ -165,8 +165,10 @@ The repository follows the principles of the *cookiecutter data science* templat
 ## Setup Guide (Streamlit app)
 
 ```bash
-# (1) Activate venv (for Linux and macOS)
+# (1-A) Activate venv (for Linux and macOS)
 source .venv/bin/activate
+# (1-B) Activate venv (for Windows)
+.\.venv\Scripts\activate.ps1
 
 # (2) Install the basically required packages
 pip install -r requirements.txt
@@ -180,8 +182,10 @@ streamlit run streamlit/app.py
 ## Setup Guide (Project)
 
 ```bash
-# (1) activate virtual environment
+# (1-A) activate virtual environment (for Linux and macOS)
 source .venv/bin/activate
+# (1-B) Activate venv (for Windows)
+.\.venv\Scripts\activate.ps1
 
 # (2-A) install core dependencies
 pip install -r requirements.txt
