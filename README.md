@@ -199,7 +199,7 @@ pip install -r requirements-dev.txt
 --------
 
 ## Setup Guide A (Airflow, MLflow and MongoDB)
-# Requirements: Docker Desktop with WSL, MongoDB (locally)
+### Requirements: Docker Desktop with WSL, MongoDB (locally)
 ```bash
 # (1) enter the WSL environment
 wsl
@@ -225,8 +225,8 @@ docker compose up -d postgres redis airflow-webserver airflow-scheduler airflow-
 --------
 
 ## Setup Guide B (API with endpoints for triggering ETL- and train-DAG as well as asking for recommendations)
-# Requirements: Docker Desktop with WSL, MongoDB (locally)
-# Containers for MLflow, MongoDB and Airflow should run (follow Setup Guide A)
+### Requirements: Docker Desktop with WSL, MongoDB (locally)
+### Containers for MLflow, MongoDB and Airflow should run (follow Setup Guide A)
 ```bash
 # (1) on a new terminal-window, enter the WSL environment
 wsl
