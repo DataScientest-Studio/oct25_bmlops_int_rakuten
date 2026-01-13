@@ -13,7 +13,7 @@ The dataset is publicly available as part of the challenge and can be accessed h
 
 **Dataset characteristics**
 - ~99,000 product entries
-- ">1,000 product classes (highly imbalanced)"
+- 1,000+ product classes (highly imbalanced)
 - Text data: ~60 MB
 - Image data: ~2.2 GB
 - Noisy real-world e-commerce data
@@ -43,6 +43,42 @@ The project deliberately emphasizes **model interpretability, reproducibility, a
 
 ## 📁 Project structure
 
+```text
+├── airflow 							— Workflow orchestration (pipelines, scheduling)
+│   ├── dags							— definition of pipelines incl trigger
+│   └── logs							— log files on pipeline execution 	
+├── data
+│   ├── input							— folder containing new / incoming data
+│   ├── lake							— folder containing pre-checked data used in ETL pipeline 
+│   └── done							— folder containing data after processed in ETL pipeline 
+├── fastapi								— API deployment
+├── logs								— log files from running 'src' or 'script' files
+├── mlflow								— esperiment tracking
+│   ├── artifacts						—
+│   └── data							—
+│       └── artifacts					—
+├── monitoring							— monitoring of infrastructure and application (= API)
+│   ├── grafana							— visualising monitoring data as dashboards
+│   │   ├── dashboards					— configurations of customized dashboard as json file
+│   │   └── provisioning				
+│   │       ├── dashboards				— general dashboard configurations as yaml file
+│   │       └── data_sources			— data source definition as yaml file
+│   └── prometheus						— scraping data from infrastructure and API
+│       └── rules						— alert rules (as yaml file)
+├── scripts								— contains Shell scripts
+├── src 								— contains Python scripts
+│   └── utils 							— contains py-files of helper functions, class definitions,...
+├── streamlit 							— frontend: presentation / live demo of project
+│   ├── logs 							— log files used for streamlit app
+│   ├── pages 							— pages from streamlit app
+│   ├── src 							— contains Python scripts and a py-file of utility functions
+│   │   ├── codes
+│   │   └── screenshots
+│   └── static_files
+└── tests
+
+
+```
 <style>
 .comment {
   margin-left: 12px;
@@ -95,20 +131,17 @@ The repository follows the principles of the *cookiecutter data science* templat
 
 ## Key Components    
 
-- **`Makefile`**   
+- **[`Makefile`](./Makefile)**   
   shortened commands for often executed files 
 
-- **`notebooks/`**  
-  Exploratory data analysis, feature engineering, and model experiments.
-
-- **`scripts/`** 
+- **[`scripts/`](./scripts/)** 
   Reusable shell scripts
   
-- **`streamlit/`**  
-  Interactive application to explore the dataset, model behavior, and results.
+- **[`streamlit/`](./streamlit/)**  
+  Interactive presentation of the project including some live demos.
 
-- **`src/`**  
-  Reusable Python modules for preprocessing, training, and evaluation.
+- **[`src/`](./src/)**  
+  Reusable Python scripts for preprocessing, training, and evaluation. Moreover, a 'utils' module containing helper functions, classes and similar. 
 
 --------
 
