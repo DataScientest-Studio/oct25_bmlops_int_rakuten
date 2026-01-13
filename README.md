@@ -198,4 +198,52 @@ pip install -r requirements-dev.txt
 
 --------
 
+## Setup Guide A (Airflow, MLflow and MongoDB)
+# Requirements: Docker Desktop with WSL, MongoDB (locally)
+```bash
+# (1) enter the WSL environment
+wsl
+
+# (2) build the image for training with knn
+docker compose -f docker-compose.ml.yaml build
+
+# (3) run the containers containing MLflow, MongoDB and knn_training
+docker compose -f docker-compose.ml.yaml up
+-> MLflow is now available on http://localhost:5000
+
+# (4) On another terminal, activate WSL and switch to the Airflow-folder
+wsl
+cd airflow
+
+# (5) build and run containers needed for Airflow
+docker compose build
+docker compose run --rm airflow-init airflow db init
+docker compose up -d postgres redis airflow-webserver airflow-scheduler airflow-worker flower
+-> Airflow is now available on http://localhost:8080
+```
+
+--------
+
+## Setup Guide B (API with endpoints for triggering ETL- and train-DAG as well as asking for recommendations)
+# Requirements: Docker Desktop with WSL, MongoDB (locally)
+# Containers for MLflow, MongoDB and Airflow should run (follow Setup Guide A)
+```bash
+# (1) on a new terminal-window, enter the WSL environment
+wsl
+
+# (2) build and start the API-container
+docker compose -f docker-compose.api.yaml up -d
+-> The API-UI is now available on http://localhost:8001/docs
+
+# (3-A) send a POST-request to the Airflow-REST-APi to trigger ETL-DAG
+curl -X POST http://localhost:8001/etl/trigger
+
+# (3-B) send a POST-request to the Airflow-REST-APi to trigger train-DAG
+curl -X POST http://localhost:8001/train/trigger
+
+# (3-C) send a GET-request to obtain recommendations for a specific product (for example productid: 4293237)
+curl "http://localhost:8001/recommend/4293237"
+
+```
+
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
