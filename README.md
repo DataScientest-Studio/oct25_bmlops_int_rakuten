@@ -42,18 +42,19 @@ The project deliberately emphasizes **model interpretability, reproducibility, a
 ---
 
 ## 📁 Project structure
-
 ```text
 ├── airflow 							— Workflow orchestration (pipelines, scheduling)
 │   ├── dags							— definition of pipelines incl trigger
-│   └── logs							— log files on pipeline execution 	
+│   └── logs							— log files on pipeline execution
+│       ├── dag_process_manager			— general dashboard configurations as yaml file
+│       └── scheduler					— 
 ├── data
 │   ├── input							— folder containing new / incoming data
 │   ├── lake							— folder containing pre-checked data used in ETL pipeline 
 │   └── done							— folder containing data after processed in ETL pipeline 
 ├── fastapi								— API deployment
 ├── logs								— log files from running 'src' or 'script' files
-├── mlflow								— esperiment tracking
+├── mlflow								— experiment tracking
 │   ├── artifacts						—
 │   └── data							—
 │       └── artifacts					—
@@ -76,61 +77,12 @@ The project deliberately emphasizes **model interpretability, reproducibility, a
 │   │   └── screenshots
 │   └── static_files
 └── tests
-
-
 ```
-<style>
-.comment {
-  margin-left: 12px;
-  color: #666;
-  font-style: italic;
-}
-</style>
-
-<body>
-	<p>
-	├── <a href="./airflow/">airflow</a><span class="comment"> — Workflow orchestration (ETL, scheduling)</span><br>
-	│   ├── <a href="./airflow/dags/">dags</a><br>
-	│   ├── <a href="./airflow/logs/">logs</a><br>
-	│   └── <a href="./airflow/plugins/">plugins</a><br>
-	├── <a href="./data/">data</a><br>
-	│   ├── <a href="./data/dags/">dags</a><br>
-	│   ├── <a href="./data/logs/">logs</a><br>
-	│   └── <a href="./data/plugins/">plugins</a><br>	
-	├── <a href="./fastapi/">fastapi</a><br>
-	├── <a href="./logs/">logs</a><br>
-	├── <a href="./mlflow/">mlflow</a><br>
-	│   ├── <a href="./mlflow/artifacts/">artifacts</a><br>
-	│   └── <a href="./mlflow/data/">data</a><br>
-	│   &nbsp;&nbsp;&nbsp; └── <a href="./mlflow/data/artifacts/">artifacts</a><br>
-	├── <a href="./monitoring/">monitoring</a><br>
-	│   ├── <a href="./monitoring/grafana/">grafana</a><br>
-	│   │   ├── <a href="./monitoring/grafana/dashboards/">dashboards</a><br>
-	│   │   └── <a href="./monitoring/grafana/provisioning/">provisioning</a><br>
-	│   │   &nbsp;&nbsp;&nbsp; ├── <a href="./monitoring/grafana/provisioning/dashboards/">dashboards</a><br>
-	│   │   &nbsp;&nbsp;&nbsp; └── <a href="./monitoring/grafana/provisioning/data_sources/">data_sources</a><br>
-	│   └── <a href="./monitoring/prometheus/">prometheus</a><br>
-	│   &nbsp;&nbsp;&nbsp; └── <a href="./monitoring/prometheus/rules/">rules</a><br>
-	├── <a href="./scripts/">scripts</a><br>
-	├── <a href="./src/">src</a><span class="comment"> — contains Python scripts</span><br>
-	│   └── <a href="./src/utils/">utils</a><span class="comment"> — contains py-files of helper functions, class definitions,...</span><br>
-	├── <a href="./streamlit/">streamlit</a><span class="comment"> — frontend: presentation / live demo of project</span><br>
-	│   ├── <a href="./streamlit/logs/">logs</a><span class="comment"> — log files used for streamlit app</span><br>
-	│   ├── <a href="./streamlit/pages/">pages</a><span class="comment"> — pages from streamlit app</span><br>
-	│   ├── <a href="./streamlit/src/">src</a><span class="comment"> — contains Python scripts and a py-file of utility functions</span><br>
-	│   │   ├── <a href="./streamlit/src/codes/">codes</a><br>
-	│   │   └── <a href="./streamlit/src/screenshots/">screenshots</a><br>
-	│   └── <a href="./streamlit/static_files/">static_files</a><br>
-	└── <a href="./tests/">tests</a><br>
-<br>
-</p>
-
 The repository follows the principles of the *cookiecutter data science* template, with additional components for MLOps experimentation and interactive visualization.
 
 --------
 
 ## Key Components    
-
 - **[`Makefile`](./Makefile)**   
   shortened commands for often executed files 
 
@@ -142,6 +94,63 @@ The repository follows the principles of the *cookiecutter data science* templat
 
 - **[`src/`](./src/)**  
   Reusable Python scripts for preprocessing, training, and evaluation. Moreover, a 'utils' module containing helper functions, classes and similar. 
+
+--------
+## Architecture Overview
+### General overview
+
+<img src="streamlit/src/screenshots/Infra_complete.png" width="800"> 
+
+### Software descriptions
+#### (1) Orchestration and Pipelines
+
+**What is the use of 'Airflow'?** 
+- Orchestrates and automates data preprocessing and feature pipelines via DAGs
+- Handles scheduling and retries of ML processes 
+- Ensures reproducibility and traceability   
+
+**What is the use of 'FastAPI'?** 
+- Python framework for quickly building web APIs   
+- Lightweight HTTP interface   
+- Decouples UI from orchestration
+
+<img src="streamlit/src/screenshots/orchestration.png" width="800"> 
+
+#### (2) Experiment tracking
+**What is the use of 'MLflow'?** 
+- Central tool for tracking ML experiments   
+- Logs parameters, metrics, models, and artifacts  
+- Makes ML experiments reproducible and comparable
+
+<img src="streamlit/src/screenshots/mlflow.png" width="200"> 
+ 
+#### (3) Microservice structure
+**What is the use of 'Docker'?**   
+- Containerized execution of services and applications   
+- Reproducible runtime environments across development and deployment   
+- Isolation of dependencies for API, UI, and other infrastructure components
+- Allows a microservice architecture and portability (**DockerHub**)
+
+<img src="streamlit/src/screenshots/microservice.png" width="350"> 
+
+#### (4) Monitoring
+**What is the use of 'Prometheus'?**   
+- Collection of system and application metrics via HTTP endpoints   
+- Time-series storage for on-going monitoring of infrastructure, application and model    
+- Basis for alerting and operational observability
+
+**What is the use of 'Grafana'?**   
+- Visualization of metrics from Prometheus and other data sources   
+- Interactive dashboards for monitoring data   
+- Support for trend analysis and anomaly inspection   
+- dashboards = IaC: portable/exchangable, versionable, less human errors,... 
+
+**What is the use of 'Node-exporter'?**   
+- Centralized aggregation of application and service logs   
+- Lightweight log indexing optimized for metric correlation   
+- Integrated log exploration within Grafana dashboards   
+
+<img src="streamlit/src/screenshots/monitoring.png" width="350"> 
 
 --------
 
