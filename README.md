@@ -205,6 +205,7 @@ pip install -r requirements-dev.txt
 wsl
 
 # (2) build the image for training with knn
+#note: to ensure that the results are stored locally, you have to change the mounted volumes in the docker-compose.ml.yaml-file (lines 28 and 29 as well as line 52)
 docker compose -f docker-compose.ml.yaml build
 
 # (3) run the containers containing MLflow, MongoDB and knn_training
