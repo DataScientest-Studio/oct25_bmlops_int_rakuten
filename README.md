@@ -221,6 +221,7 @@ wsl
 cd airflow
 
 # (5) build and run containers needed for Airflow
+#note: you have to change agein the mounted volumes in the airflow/docker-compose.yaml-file (lines 23-29 and 105-112)
 docker compose build
 docker compose run --rm airflow-init airflow db init
 docker compose up -d postgres redis airflow-webserver airflow-scheduler airflow-worker flower
