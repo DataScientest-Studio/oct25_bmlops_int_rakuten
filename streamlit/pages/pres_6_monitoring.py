@@ -39,8 +39,8 @@ def show():
 
     ⚡ **Live Demos**
     """)
-    url_graf = "https://bookish-space-train-v6r9vrjvrjj9fwqwp-3000.app.github.dev/"
-    url_prom = "https://bookish-space-train-v6r9vrjvrjj9fwqwp-9090.app.github.dev/"
+    url_graf = "https://localhost:3000"
+    url_prom = "https://localhost:9090"
     
     top_left, top_right = st.columns(2)
     left, middle, right_1, right_2 = st.columns(4)
