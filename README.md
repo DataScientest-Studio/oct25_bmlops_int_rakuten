@@ -31,9 +31,6 @@ High-level workflow:
 2. **Text preprocessing & embedding**
 3. **Image preprocessing & feature extraction**
 4. **Model training**
-   - text-only baseline
-   - image-only baseline
-   - multimodal fusion models
 5. **Evaluation & error analysis**
 6. **Interactive exploration via Streamlit**
 
@@ -43,40 +40,40 @@ The project deliberately emphasizes **model interpretability, reproducibility, a
 
 ## 📁 Project structure
 ```text
-├── airflow 							— Workflow orchestration (pipelines, scheduling)
-│   ├── dags							— definition of pipelines incl trigger
-│   └── logs							— log files on pipeline execution
-│       ├── dag_process_manager			— general dashboard configurations as yaml file
-│       └── scheduler					— 
+├── airflow 							   — Workflow orchestration (pipelines, scheduling)
+│   ├── dags							   — definition of pipelines incl trigger
+│   └── logs							   — log files from airflow on pipeline execution
+│       ├── dag_process_manager	   — general dashboard configurations as yaml file
+│       └── scheduler				   —  
 ├── data
-│   ├── input							— folder containing new / incoming data
-│   ├── lake							— folder containing pre-checked data used in ETL pipeline 
-│   └── done							— folder containing data after processed in ETL pipeline 
-├── fastapi								— API deployment
-├── logs								— log files from running 'src' or 'script' files
-├── mlflow								— experiment tracking
-│   ├── artifacts						—
-│   └── data							—
-│       └── artifacts					—
-├── monitoring							— monitoring of infrastructure and application (= API)
+│   ├── data_input						— folder containing new / incoming data
+│   ├── data_lake							— folder containing pre-checked data used in ETL pipeline 
+│   └── data_done							— folder containing data after processed in ETL pipeline 
+├── api								      — API deployment
+├── logs								      — log files from running 'src' or 'script' files
+├── mlflow								   — experiment tracking
+│   ├── artifacts						   —
+│   └── data							   —
+│       └── artifacts				   —
+├── monitoring							   — monitoring of infrastructure and application (= API)
 │   ├── grafana							— visualising monitoring data as dashboards
 │   │   ├── dashboards					— configurations of customized dashboard as json file
 │   │   └── provisioning				
 │   │       ├── dashboards				— general dashboard configurations as yaml file
 │   │       └── data_sources			— data source definition as yaml file
 │   └── prometheus						— scraping data from infrastructure and API
-│       └── rules						— alert rules (as yaml file)
-├── scripts								— contains Shell scripts
-├── src 								— contains Python scripts
-│   └── utils 							— contains py-files of helper functions, class definitions,...
-├── streamlit 							— frontend: presentation / live demo of project
-│   ├── logs 							— log files used for streamlit app
-│   ├── pages 							— pages from streamlit app
-│   ├── src 							— contains Python scripts and a py-file of utility functions
+│       └── rules						   — alert rules (as yaml file)
+├── scripts								   — contains Shell scripts
+├── src 								      — contains Python scripts
+│   └── utils 							   — contains py-files of helper functions, class definitions,...
+├── streamlit 						   	— frontend: presentation / live demo of project
+│   ├── logs 							   — log files used for streamlit app
+│   ├── pages 							   — pages from streamlit app
+│   ├── src 							   — contains Python scripts and a py-file of utility functions
 │   │   ├── codes
-│   │   └── screenshots
+│   │   └── screenshots             — files,  
 │   └── static_files
-└── tests
+└── tests                           —
 ```
 The repository follows the principles of the *cookiecutter data science* template, with additional components for MLOps experimentation and interactive visualization.
 
@@ -167,6 +164,7 @@ The repository follows the principles of the *cookiecutter data science* templat
 ```bash
 # (1-A) Activate venv (for Linux and macOS)
 source .venv/bin/activate
+
 # (1-B) Activate venv (for Windows)
 .\.venv\Scripts\activate.ps1
 
@@ -184,6 +182,7 @@ streamlit run streamlit/app.py
 ```bash
 # (1-A) activate virtual environment (for Linux and macOS)
 source .venv/bin/activate
+
 # (1-B) Activate venv (for Windows)
 .\.venv\Scripts\activate.ps1
 
