@@ -16,7 +16,6 @@ services:
     build:
       context: .
       dockerfile: mlflow/Dockerfile
-    # image: ghcr.io/mlflow/mlflow:v2.9.2
     container_name: mlflow
     depends_on:
       - mlflow-postgres
@@ -30,9 +29,10 @@ services:
       - ./mlflow/artifacts:/mlflow/artifacts
       - ./mlflow/data:/mlflow
     restart: unless-stopped
-    
+
 volumes:
   mlflow-postgres-db-volume:
+
 
 networks:
   default:

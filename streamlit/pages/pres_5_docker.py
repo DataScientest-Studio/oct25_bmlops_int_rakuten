@@ -1,13 +1,7 @@
 import streamlit as st
-import os
 from pathlib import Path
-from datetime import datetime
 
 from src.utils import live_command_demo
-
-import time
-import subprocess
-
 
 make_extract = Path("/workspaces/oct25_bmlops_int_rakuten/streamlit/src/makefile_extract.py").read_text(encoding="utf-8")
 
@@ -100,11 +94,6 @@ def show():
 
     **⚡ Live Demos**
     """)
-    # Docker ermöglicht die Containerisierung von Anwendungen, d. h. 
-    # Software wird inklusive aller Abhängigkeiten in isolierten, 
-    # reproduzierbaren Laufzeitumgebungen ausgeführt.
-    # Im Projekt wird Docker genutzt, um API, Streamlit-App und Infrastrukturkomponenten 
-    # konsistent und portabel zu betreiben.
 
     LOGS = Path("/workspaces/oct25_bmlops_int_rakuten/streamlit/logs")
     LOGS.mkdir(parents=True, exist_ok=True)
@@ -113,14 +102,8 @@ def show():
     log_monitoring = LOGS / "build_monitoring"
     log_docker = LOGS / "docker_status"
 
-    # if "build_running" not in st.session_state:
-    #     st.session_state.build_running = False
-
     if "monitoring_running" not in st.session_state:
         st.session_state.monitoring_running = False
-    
-    # if "build_ml" not in st.session_state:
-    #     st.session_state.build_running = False
     
     top_left, top_middle, top_right = st.columns(3)
     bottom_left, bottom_middle, bottom_right = st.columns(3)
@@ -140,7 +123,6 @@ def show():
     sel = top_right.pills(
         "file edit mode",
         options = options_dict.keys(),
-        # format_func=lambda option: options_dict[option],
         selection_mode="single",
         default="append"
     )
@@ -151,10 +133,7 @@ def show():
                 "build MLflow", 
                 width="stretch", 
                 key="ml",
-                # disabled=st.session_state.build_running
-                ): # and not st.session_state.build_running:
-        
-        # st.session_state.build_running = True
+                ): 
 
         cmd = ["make", "ml_docker"]
 
@@ -169,7 +148,6 @@ def show():
                 state="complete",
                 expanded=False
                 )
-            # st.success("Building API containers finished successfully.")
         else:
             status.update(
                 label=f"Building MLflow containers failed (exit code {exit_code}).", 
@@ -178,16 +156,11 @@ def show():
                 )
             st.error(f"Building MLflow containers failed (exit code {exit_code}).")
 
-        # st.session_state.build_running = False
-
     if top_middle.button(
                     "build monitoring", 
                     width="stretch", 
                     key="monitoring",
-                    # disabled=st.session_state.build_running
-                    ): #  and not st.session_state.build_running:
-
-        # st.session_state.build_running = True
+                    ): 
 
         cmd = ["make", "monitoring_docker"]
 
@@ -207,16 +180,7 @@ def show():
                 expanded=True,
                 )
 
-        # st.session_state.build_running = False
         st.session_state.monitoring_running = True
-
-    
-    # ("reset", type="tertiary", icon="🔥"):
-        # st.session_state.build_running = False
-        # status.update(
-        #         label="Status reset. choose a button...", 
-        #         state="complete",
-        #         expanded=False)
 
     # ------------
     # BOTTOM ROW  
@@ -225,10 +189,7 @@ def show():
                 "remove MLflow", 
                 width="stretch", 
                 key="ml_remove",
-                # disabled=st.session_state.build_running
-                ): #  and not st.session_state.build_running:
-        
-        # st.session_state.build_running = True
+                ): 
 
         cmd = ["make", "ml_stop"]
 
@@ -242,26 +203,19 @@ def show():
                 state="complete",
                 expanded=False
                 )
-            # st.success("Building API containers finished successfully.")
+
         else:
             status.update(
                 label=f"Removing MLflow containers failed (exit code {exit_code}).", 
                 state="error",
                 expanded=True,
                 )
-            # st.error(f"Building API containers failed (exit code {exit_code}).")
-
-        # st.session_state.build_running = False
-        # st.session_state.api = False
 
     if bottom_middle.button(
                     "remove monitoring", 
                     width="stretch", 
                     key="monitoring_remove",
-          #           disabled=st.session_state.build_running
                     ):
-
-        # st.session_state.build_running = True
 
         cmd = ["make", "monitoring_stop"]
 
@@ -281,7 +235,6 @@ def show():
                 expanded=True,
                 )
 
-        # st.session_state.build_running = False
         st.session_state.monitoring_running = False
 
     if bottom_right.button(
@@ -307,44 +260,3 @@ def show():
                 state="error",
                 expanded=True,
                 )
-
-        # variante B
-        # import logging
-
-        # logging.basicConfig(
-        #     filename="pipeline.log",
-        #     level=logging.INFO,
-        #     format="%(asctime)s | %(levelname)s | %(message)s",
-        # )
-
-        # logging.info("Pipeline started")
-
-    # else:
-    #     MAX_RETRIES = 10
-    #     SLEEP_SECONDS = 1
-    #     COUNT = 1
-        
-    #     while MAX_RETRIES >= COUNT:
-    #         exit_code = process.poll()
-    #         if exit_code is not None:
-    #             break
-
-    #         placeholder.info(f"Waiting for log file... (attempt {COUNT}/{MAX_RETRIES})")
-    #         time.sleep(SLEEP_SECONDS)
-    #         COUNT += 1
-
-    #     for attempt in range(1, MAX_RETRIES + 1):
-    #         if log_file.exists():
-    #             placeholder.code(log_file.read_text(), language="text")
-    #             break
-    #         else:
-    #             placeholder.info(f"Waiting for log file... (attempt {attempt}/{MAX_RETRIES})")
-    #             time.sleep(SLEEP_SECONDS)
-    #     else:
-    #         placeholder.error("Log file did not appear.")
-    #             # count+=1
-    #         #     st.info("No log output yet.")
-    #     # st.write("add LINK to Airflow")
-    # else:
-    #     st.write("")
-    # st.divider()

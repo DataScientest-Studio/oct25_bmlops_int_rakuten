@@ -11,16 +11,7 @@ def show():
     - Ensures reproducibility and traceability   
     """
     )
-    #st.subheader("(2) Benefits")
-    #st.markdown("""
-    #- Workflows defined as code (Python) → easy to maintain and version
-    #- Clear visualization of pipelines (DAGs) via web UI
-    #- Strong error handling (retries, alerts, logging)   
-    #- Integrates well with MLOps tools (e.g. MLflow, Docker)
-    #"""
-    #)
 
-    ## 
     col1, col2 = st.columns(2, border=True)
 
     img_details_processing = Path("src/screenshots/details_processing.png")

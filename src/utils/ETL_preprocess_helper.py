@@ -8,21 +8,17 @@ warnings.filterwarnings("ignore", module="bs4")
 warnings.filterwarnings("ignore", module="lxml")
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
+import re
+import gc
+from PIL import Image
+from rich.progress import Progress
 from bs4 import BeautifulSoup
 import html
 import unicodedata
 import pandas as pd
 import numpy as np
-from PIL import Image
-from rich.progress import Progress
 
-import re
-import gc
-
-
-# import .setup_helper as sh
 from . import database_helper as dbh
-# from .settings import session
 
 
 ##########################
@@ -106,9 +102,9 @@ def get_mobilenet_embeddings(img_paths, batch_size=16):
     
     return embeddings
 
-##########################
+#----------------
 # TEXT FUNCTION
-#########################
+#----------------
 
 # "CLEANING" functions
 allowed_pattern = re.compile(r"^[\wÀ-ÖØ-öø-ÿ0-9\s.,;:!?%€$'\"()\-–—°/&#+]+$")

@@ -4,16 +4,12 @@ import streamlit as st
 from datetime import datetime
 from pathlib import Path
 
-def live_command_demo(cmd, log_name, mode="a"): # , live=True):
+def live_command_demo(cmd, log_name, mode="a"):
     placeholder = st.empty()
     start_time = datetime.now()
-    # if mode == "new":
-    #     edit_mode = "a"
-    # elif mode == "write":
-    #     edit_mode = "w"
-    # elif mode == "new":
+    
     log_file = Path(f"{log_name}.log")
-    #     edit_mode = ""
+   
 
     with open(log_file, mode, buffering=1) as log:
         # log.write("")
@@ -29,9 +25,7 @@ def live_command_demo(cmd, log_name, mode="a"): # , live=True):
             text=True
             )
 
-    # if live:
     while True:
-#         for _ in range(60):  # Demo-Zeitfenster
         if log_file.exists():
             placeholder.code(log_file.read_text(), 
                             language="text")
@@ -62,15 +56,7 @@ def live_command_demo(cmd, log_name, mode="a"): # , live=True):
 
         time.sleep(1)
 
-
-    # if error_mark:
-    #     lines = log_file.read_text().splitlines()
-    #     errors = [l for l in lines if "ERROR" in l or "FAILED" in l]
-    #     if errors:
-    #         st.code("\n".join(errors), language="text")
-
     return exit_code
-
 
 
 def clear_others(active_key):

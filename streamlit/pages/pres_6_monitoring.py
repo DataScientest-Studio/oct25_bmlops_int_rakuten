@@ -7,7 +7,6 @@ LOGS = Path("/workspaces/oct25_bmlops_int_rakuten/streamlit/logs")
 LOGS.mkdir(parents=True, exist_ok=True)
     
 log_api = LOGS / "build_api"
-# log_monitoring = LOGS / "build_monitoring"
 
 def show():
     st.header("📡 Monitoring & Maintenance")
@@ -52,17 +51,12 @@ def show():
     with top_right.popover("log 'API'"):
         st.write()
         
-    # if st.session_state.monitoring_running:
     left.link_button("Prometheus UI", 
                     url_prom,
                     width="stretch")
     middle.link_button("Grafana UI", 
                     url_graf,
                     width="stretch")
-
-    # else:
-    #     st.warning("Monitoring tools are not yet deployed.", 
-    #             icon="⚠️")
 
     if right_1.button(
                 "Build API container",
@@ -82,7 +76,7 @@ def show():
                 state="complete",
                 expanded=False
                 )
-            # st.success("Building API containers finished successfully.")
+
         else:
             status.update(
                 label=f"Buidling API container failed (exit code {exit_code}).", 
@@ -100,7 +94,7 @@ def show():
 
         status.update(label="Generating traffic on API...", state="running")
 
-        exit_code = live_command_demo(cmd, log_api, mode="a")       # file_mode
+        exit_code = live_command_demo(cmd, log_api, mode="a")     
 
         if exit_code == 0:
             status.update(
@@ -108,28 +102,12 @@ def show():
                 state="complete",
                 expanded=False
                 )
-            # st.success("Building API containers finished successfully.")
+            
         else:
             status.update(
                 label=f"Generating traffic on API failed (exit code {exit_code}).", 
                 state="error",
                 expanded=True,
                 )
-            # st.error(f"Building MLflow containers failed (exit code {exit_code}).")
-
-        # st.session_state.build_running = False
-
-
-    # Prometheus
-    # Prometheus ist ein zeitreihenbasiertes Monitoring-System, das Metriken über HTTP-Endpunkte sammelt und speichert.
-    # Hier dient Prometheus zur Überwachung von API-Zugriffen, Laufzeiten und Systemzuständen und bildet die Grundlage für observability-orientiertes Debugging.
-
-    # Loki
-    # Loki ist ein log-zentriertes Aggregationssystem, das Logs effizient speichert und eng mit Grafana integriert ist.
-    # Es ermöglicht die korrelierte Analyse von Logs und Metriken, ohne komplexe Volltextindizierung wie bei klassischen Log-Systemen.
-
-    # Grafana
-    # Grafana ist ein Visualisierungs- und Dashboard-Tool für Metriken aus verschiedenen Datenquellen (z. B. Prometheus).
-    # Im Projekt wird Grafana verwendet, um System- und Modellmetriken übersichtlich darzustellen und Trends oder Anomalien visuell zu analysieren.
-
+            
     

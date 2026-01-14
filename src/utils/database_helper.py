@@ -79,6 +79,7 @@ def setup_mongodb(db_name: str = None,
     
     return db, db_name, coll_dict
 
+
 def mongoDB_check(db, db_name, coll_dict):        
     print(f"{len(db.list_collection_names())} collections in database {db_name}.")
 
@@ -194,20 +195,6 @@ def upload_text_data(df, coll_name="products"):
         doc = collection.find_one()
         for key, value in doc.items():
             print(f"{key}:\t{value}")
-
-    # if not names:
-    #     names = ["df_train", "df_test"]
-
-    #     for name, df in zip(names, 
-    #                         dfs):
-    #         # df = pd.read_csv(f"{DATA_PROCESSED}/{f}_clean.csv", index_col=0)
-            
-    #     else:
-    #         print("\nNo entries found in the collection.")
-    
-    # else: 
-    #     print("Function probably not yet suitable for that input. Please check.")
-    #     # return None 
  
 
 def upload_img_metadata(df, source_name, coll_name, now):

@@ -2,15 +2,14 @@
 # imports
 import os
 from pathlib import Path
-from datetime import datetime
 import pickle
 import shutil
-import numpy as np
-import pandas as pd
-import zipfile
-from enum import Enum
 from dataclasses import dataclass
 from typing import List, Optional
+import zipfile
+from enum import Enum
+
+import pandas as pd
 
 from . import setup_helper as sh
 from . import data_helper as dh
@@ -52,17 +51,16 @@ class ExtractStatus(Enum):
 @dataclass(frozen=True)
 class ExtractResult:
     status: ExtractStatus
-    # für Python 3.10+
+    # if Python: 3.10+
     # files: list[Path] | None = None
     # folders: list[Path] | None = None
 
-    # für Python <3.10
+    # if Python: <3.10
     files: Optional[List[Path]] = None
     folders: Optional[List[Path]] = None
 
 
 def unzip_images(f_names, extract_dir):
-    # zip_file = Path(src_folder) / "images.zip"
     
     img_files, img_folders = list_files_and_folders(extract_dir)
     
@@ -86,9 +84,6 @@ def unzip_images(f_names, extract_dir):
             folders=folders_unzipped
                     )   
 
-    # else:
-    #     print(f"No files unzipped. Folder 'extract_dir' already contains {len(img_files)} files and {img_folders} folders .")
-    #     return None, None 
 
 
 def list_files_and_folders(path):
@@ -98,13 +93,12 @@ def list_files_and_folders(path):
     return files, folders
 
 def save_pickle(file, path, folder=None):
-    # now = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
+
     if not folder:
-        file_path = os.path.join([path, ".pkl"])
+        file_path = Path(f"{path}.pkl")
 
     else:
-        file_path = os.path.join([folder, path, ".pkl"])
+        file_path = Path(f"{folder}/{path}.pkl")
 
     try:
         # save as pickle
@@ -112,8 +106,8 @@ def save_pickle(file, path, folder=None):
             pickle.dump(file, f)
         
         print("[SUCCESS] File saved")
-    except:
-        print("[ERROR] Saving file as pkl.")
+    except Exception as e:
+        print("[ERROR] Saving file as pkl.", e)
 
 
 def save_pickle2(obj, file_path):

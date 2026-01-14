@@ -4,11 +4,7 @@ def show():
     st.header("🧭 Introduction")
     st.write("What is the need for a recommendation app?") 
 
-    # st.write("{text from report}")
-
     tabs = st.tabs(["Context", "Table of contents"])
-
-    # :material/subdirectory_arrow_right
 
     with tabs[0]:     
         st.subheader("The data")

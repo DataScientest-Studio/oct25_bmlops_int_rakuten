@@ -1,57 +1,15 @@
-##############################################################################
-# FastAPI or BentoML Service
-###############################################################################
-services:  
+services:
   fastapi:
-    build: 
+    build:
       context: .
       dockerfile: fastapi/Dockerfile
     container_name: fastapi
     ports:
       - "8001:8001"
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-    #   interval: 30s
-    #   timeout: 5s
-    #   retries: 3
-    # depends_on:
-    #   - mlflow
-    # environment:
-    #   MLFLOW_TRACKING_URI: http://mlflow:5000
     restart: always
     networks:
       - rakuten_network
-  
-  # streamlit:
-  #   build: 
-  #     context: .
-  #     dockerfile: streamlit/Dockerfile
-  #   container_name: streamlit
-  #   ports:
-  #     - "8501:8501"
-  #   restart: always
-  #   networks:
-  #     - rakuten_network
-    # depends_on:
-    #   fastapi:
-    #     condition: service_healthy
 
 networks:
-  # default:
-  #   driver: bridge
-  #   name: rakuten_network
   rakuten_network:
     external: true
-
-# Alternative:
-#  bentoml:
-#    image: bentoml/bento-server:latest
-#    container_name: bentoml
-#    ports:
-#      - "3000:3000"
-#    volumes:
-#      - ./bento:/bento
-#    command: bentoml serve /bento --host 0.0.0.0 --port 3000
-
-###############################################################################
-

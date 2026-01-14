@@ -11,13 +11,6 @@ x-airflow-common: &airflow-common
     AIRFLOW__WEBSERVER__WORKER_CLASS: ${AIRFLOW__WEBSERVER__WORKER_CLASS}
     AIRFLOW__WEBSERVER__WEB_SERVER_MASTER_TIMEOUT: ${AIRFLOW__WEBSERVER__WEB_SERVER_MASTER_TIMEOUT}
 
-    # DB_NAME: ${DB_NAME}
-    # COLLECTION_NAME: ${COLLECTION_NAME}
-    # MONGO_URI: ${MONGO_URI}
-  # env_file:
-  #   - .env #.docker
-    # ✅ Variante B (explizit, kontrolliert)
-    # docker compose --env-file .env.docker up airflow-init
   volumes:
     - ./airflow/dags:/opt/airflow/dags
     - ./airflow/logs:/opt/airflow/logs
@@ -42,29 +35,23 @@ services:
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "airflow"]
+      test: [ "CMD", "pg_isready", "-U", "airflow" ]
       interval: 5s
       retries: 5
     restart: always
 
   airflow-init:
     <<: *airflow-common
-    # image: apache/airflow:2.8.1
     container_name: airflow-init
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: ${AIRFLOW_DB_URI}
-      # _AIRFLOW_WWW_USER_CREATE: "true"
-      # _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_USERNAME}
-      # _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_PASSWORD}
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
     command: >
-      bash -c "
-      airflow db migrate &&
-      airflow users create --username ${AIRFLOW_USERNAME} --password ${AIRFLOW_PASSWORD} --firstname Admin --lastname User --role Admin --email admin@example.com"
+      bash -c " airflow db migrate && airflow users create --username ${AIRFLOW_USERNAME} --password ${AIRFLOW_PASSWORD} --firstname Admin --lastname User --role Admin --email admin@example.com"
     restart: "no"
 
   airflow-webserver:
@@ -91,9 +78,7 @@ services:
 volumes:
   postgres-db-volume:
 
+
 networks:
-  # default:
-  #   driver: bridge
-  #   name: rakuten_network
   rakuten_network:
     external: true

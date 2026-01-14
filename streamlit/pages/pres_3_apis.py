@@ -1,6 +1,5 @@
 import streamlit as st
 from pathlib import Path
-import requests
 
 def show():
     st.header("🔌 FastAPI")
@@ -10,15 +9,12 @@ def show():
     - Lightweight HTTP interface   
     - Decouples UI from orchestration
     """)
-     
-    ## 
-    # col1, col2, col3 = st.columns(3, border=True)
     
     # Bsp.-Dateien für Testzwecke
     img_etl_trigger = Path("src/screenshots/etl_trigger.png")
     img_training = Path("src/screenshots/training.png")
     img_recos = Path("src/screenshots/recommend.png")
-    code = Path("src/test.py").read_text(encoding="utf-8")
+    
     st.subheader("Endpoints")
     with st.expander("trigger 'etl-pipeline'"):
         with st.popover("ETL-trigger"):

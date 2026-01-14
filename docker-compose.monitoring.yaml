@@ -12,7 +12,7 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yaml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'  
+      - '--web.console.templates=/usr/share/prometheus/consoles'
     restart: always
 
   loki:
@@ -30,9 +30,6 @@ services:
     image: grafana/promtail:latest
     container_name: promtail
     volumes:
-      # - /var/log:/var/log
-      # - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      # - /etc/promtail:/etc/promtail
       - /var/run/docker.sock:/var/run/docker.sock
       - ./monitoring/loki/promtail.yaml:/etc/promtail/promtail.yaml
     command: -config.file=/etc/promtail/promtail.yaml
@@ -69,21 +66,13 @@ services:
       - '--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/run/docker/netns/.+)$'
     restart: always
 
-  # evidently:
-  #   image: evidently/evidently-service:latest
-  #   container_name: evidently
-  #   ports:
-  #     - "8000:8000"
-  #   command: evidently ui --host 0.0.0.0 --port 8000
-  #   restart: always
-
 volumes:
   grafana_data:
   prometheus_data:
   loki_data:
 
+
 networks:
   default:
     driver: bridge
     name: rakuten_network
-

@@ -1,56 +1,41 @@
-from fastapi import FastAPI, HTTPException, Response, Request
-import requests
-import os
-import logging
-import numpy as np
 import time
 from datetime import datetime
-from prometheus_client import Counter, Histogram, generate_latest, CollectorRegistry, Gauge
-from fastapi import Request
+import os
+import logging
+
+import requests
+import numpy as np
+from prometheus_client import Counter, Histogram, generate_latest, CollectorRegistry
+
+from fastapi import FastAPI, HTTPException, Response, Request
 from fastapi.responses import JSONResponse
 
-import utils
+import utils as utils
 
 
 # --- Logging Configuration ---
 logging.basicConfig(level=logging.DEBUG)
 
-# logging.basicConfig(
-#     level=logging.INFO,
-#     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-#     handlers=[
-#         logging.StreamHandler(sys.stdout),
-#         logging.FileHandler("app.log", mode="a"),
-#     ],
-# )
-
-# logger = logging.getLogger("api")
-# logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# ----- load env-variables -----------
-# utils.load_env_vars(f_name=".env.docker")   # for docker deployment
- 
-# ws_name = os.getenv("WORKSPACE_NAME")
-# proj_name = os.getenv("PROJECT_NAME")
-# proj_desc = os.getenv("PROJECT_DESCRIPTION")
+logger = logging.getLogger("API_demo")
 
 # --- FastAPI App Initialization ---
 app = FastAPI()
 
+utils.load_env_vars(f_name=".env.fastapi")
+
 # --- Prometheus Metrics Definitions ---
+registry = CollectorRegistry()
 
 api_request_total = Counter(name="api_requests_total", 
                             documentation="Total number of API requests", 
-                            labelnames=['endpoint', 'method', 'status_code'], 
-                            # registry=registry
+                            labelnames=['endpoint', 'method', 'status_code'],
+                            registry=registry
                             )
 
 api_request_duration_seconds = Histogram(name="api_request_duration_seconds", 
                                         documentation="API request duration in seconds", 
-                                        labelnames=['endpoint', 'method', 'status_code'], 
-                                        # buckets=(0.005, 0.01, 0.025), 
-                                        # registry=registry
+                                        labelnames=['endpoint', 'method', 'status_code'],
+                                        registry=registry
                                         )
 
 
@@ -59,8 +44,33 @@ AIRFLOW_URL = "http://airflow-webserver:8080/api/v1"
 DAG_ID = "data_processing_pipeline"
 
 # --- Pydantic Models for API Input/Output ---
+
+
+# --- API middle ware --- exception handling ---
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled exception")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc)},
+    )
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger.info(f"START {request.method} {request.url.path}")
+    response = await call_next(request)
+    logger.info(f"END {request.url.path} → {response.status_code}")
+    return response
+
+# --- API Endpoints ---
+# Health Check Endpoint
+@app.get("/")
+def root():
+    return {"message": "FastAPI ETL Trigger Active", 
+            "status": "ok"}
+
+# Sample French Texts Endpoint -- used in live demo (streamlit)
 texts = ["Je vais bien. Comment allez-vous ?",
-            # "Comment ca va?", 
             "J’ai faim.", 
             "J’ai soif.",
             "Ça ne va pas très bien.",
@@ -80,35 +90,8 @@ texts = ["Je vais bien. Comment allez-vous ?",
             "À plus tard."
             ]
 
-# --- API middle ware --- exception handling ---
-from fastapi import Request
-from fastapi.responses import JSONResponse
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    logger.exception("Unhandled exception")
-    return JSONResponse(
-        status_code=500,
-        content={"detail": str(exc)},
-    )
-
-
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    logger.info(f"START {request.method} {request.url.path}")
-    response = await call_next(request)
-    logger.info(f"END {request.url.path} → {response.status_code}")
-    return response
-
-# --- API Endpoints ---
-@app.get("/")
-def root():
-    return {"message": "FastAPI ETL Trigger Active", 
-            "status": "ok"}
-
-
-@app.get("/french")
-def health():
+@app.get("/french")         # 
+def french():
     start_time = time.time()
     status_code = "200"
 
@@ -128,41 +111,50 @@ def health():
         raise
     except requests.exceptions.RequestException as re:
         print(f"    - Error sending request {i+1}: {re}")
-    # except Exception as e:
-    #     print(f"    - Unexpected error for request {i+1}: {e}")
 
     except Exception as e:
         # print(f"Error during demo: {e}")
-        logger.exception("Health endpoint failed")
+        logger.exception("French endpoint failed")
         status_code = "500"
         raise HTTPException(status_code=500, 
-                    detail=f"Triggering '/health' failed due to an internal error: {e}")
+                    detail=f"Triggering '/french' failed due to an internal error: {e}")
 
     finally:
         end_time = time.time()
         duration = end_time - start_time
         api_request_duration_seconds.labels(
-                                        endpoint="/health", 
+                                        endpoint="/french", 
                                         method="GET", 
                                         status_code=str(status_code)
                                         ).observe(duration)
         api_request_total.labels(
-                            endpoint="/health", 
+                            endpoint="/french", 
                              method="GET", 
                              status_code=str(status_code)
                              ).inc()
 
+# ETL Pipeline Trigger Endpoint
 @app.post("/trigger-etl")
 def trigger_etl():
-    start_time = time.time()
     status_code = "200"
+
+    admin_user = os.getenv("AIRFLOW_ADMIN_USER", None)
+    admin_password = os.getenv("AIRFLOW_ADMIN_PASSWORD", None)
+
+    if not admin_user or not admin_password:
+        logger.error("Error during trigger: missing airflow credentials in environment variables")
+        status_code = "500"
+        raise HTTPException(status_code=500, 
+                            detail="Airflow admin credentials are not set in environment variables.")
+
+    start_time = time.time()
 
     try:
         dag_run_id = f"api_trigger_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
         response = requests.post(
             f"{AIRFLOW_URL}/dags/{DAG_ID}/dagRuns",
-            auth=("airflow", "airflow"),   # Airflow credentials
+            auth=(admin_user, admin_password),                # Airflow credentials
             json={
                 "dag_run_id": dag_run_id,
                 "conf": {"comment": "PLACEHOLDER -- dynamic input"}
@@ -199,41 +191,10 @@ def trigger_etl():
                              status_code=str(status_code)
                              ).inc()
 
-
+# Prometheus Metrics Endpoint
 @app.get("/metrics")
 async def metrics():
     """
     Expose Prometheus metrics.
     """
-    return Response(generate_latest(), media_type="text/plain")
-
-# -------------------------
-# Potential dynamic input (--> conf:)
-# -------------------------
-# "filename": "products_2024_12.csv",     # welche Dateien
-
-# "only_text": true,                      # welche Daten
-# "process_text": true,                   
-# "process_images": false
-
-# "debug_mode": false                     
-
-# "force_etl": true                       # etl-Prozess erzwingen
-# "force_reprocess": true                 # kompletten Prozess erzwingen
-
-# "export_to_s3": true                    # Export?
-
-# "embedding_model": "all-MiniLM-L6-v2"   # welches MOell nutzen?
-# "threshold": 0.8                        # welche HyperParameter?
-
-# "max_missing": 0.2,                     # Datenvalidierung
-# "drop_duplicates": true
-
-# "cleaning_level": "strict"              # steuerung verschiedener Modi
-
-# "write_mode": "overwrite"               # Parameter für DB, VErsionierung, Tabelle,...
-# "collection": "products_raw"
-
-# "send_slack": true                      # Alert-Trigger verwalten
-
-# "run_tag": "customer_upload_123"        # Info für Grafana_tracking-DB
+    return Response(content=generate_latest(registry), media_type="text/plain")

@@ -1,22 +1,43 @@
 ## setup_helper.py
 # imports
-# from pymongo import MongoClient
-from dotenv import load_dotenv, find_dotenv
 import os
 import io
 from pathlib import Path
-# import importlib
-# import argparse
 import inspect 
 from datetime import datetime 
-import click
 from functools import wraps
+import subprocess
+import sys
 
-# from datetime import datetime
-# import subprocess
-# import sys
+import click
+from dotenv import load_dotenv, find_dotenv
+
 from .settings import session
 
+
+def install_packages(env, root, logfile):
+    # Installing packages
+    print("\nInstalling required packages...")
+
+    # create shell command 
+    cmd = ["uv", "sync"]
+    if env == "+mlops":
+        cmd += ["--group", "mlops"]
+    elif env == "+dev":
+        cmd += ["--group", "dev"]
+    elif env == "all":
+        cmd += ["--group", "mlops", "--group", "heavy", "--group", "dev"]    
+    
+    # run command
+    result = subprocess.run(cmd,
+                        cwd=str(root), 
+                        check=True
+                            )
+    if result.returncode != 0:
+        print(f"❌ uv sync failed. Check log: {logfile}")
+        sys.exit(1)
+
+    print(f"✅ Packages from {env} dependency group installed.")
 
 def load_env_vars(files=None):
     """
@@ -48,15 +69,6 @@ def load_env_vars(files=None):
             session.env_loaded = True
             session.save_session()
  
-    
-    #         f_path = find_dotenv(filename=".env.session")
-
-    # session_path = find_dotenv(filename=".env.session")
-    # if session_path and os.path.exists(session_path):
-    #     load_dotenv(session_path, override=True)
-    #     print("Variables from .env.session loaded")
-    
-    
 
 def shorten_path(path, n=3):
     p = Path(path).parts
@@ -156,82 +168,6 @@ def cli_or_api(func):
         return func(**params)
     
     return wrapper
-
-
-    # return ROOT, DATA, VENV
-
-
-
-    # # load environment variables
-    # if args.env == "colab":
-    #     # mount with GoogleDrive
-    #     try:
-    #         from google.colab import drive
-    #         drive.mount('/content/drive')
-
-    #     except ImportError:
-    #         # !uv add google.colab
-    #         # from google.colab import drive
-    #         raise RuntimeError("Colab environment required for --env colab")
-
-    #     ROOT = Path(os.getenv("COLAB_ROOT"))
-    #     DATA = Path(os.getenv("COLAB_DATA"))
-    #     VENV = Path(os.getenv("COLAB_VENV"))
-
-    # else:
-    #     ROOT = Path(os.getenv("LOCAL_ROOT")).resolve()
-    #     DATA = Path(os.getenv("LOCAL_DATA"))
-    #     VENV = Path(os.getenv("LOCAL_VENV"))
-    
-    # return ROOT, DATA, VENV, args
-
-        #     if name not in bound.arguments:
-        #         default = param.default if param.default is not inspect._empty \
-        #                                 else None
-        #         typ = param.annotation if param.annotation is not inspect._empty \
-        #                                 else str
-
-        #         bound.arguments[name] = click.prompt(
-        #             f"Enter value for {name}",
-        #             type=typ,
-        #             default=default,
-        #         )
-
-# def load_args():
-#     """
-#     Load variables passed as input from shell command. 
-#     """
-#     # detect jupyter
-#     if "ipykernel" in sys.modules:
-#         print("[INFO] Jupyter detected — skipping argparse.")
-#         class DummyArgs:
-#             env = "core"
-#             n_neighbors = 5
-#             query_pid = None
-#             msg = ""
-
-#         args = DummyArgs()
-
-#     else:    
-#         # define parsed arguments
-#         parser = argparse.ArgumentParser()
-#         # parser.add_argument("--env", choices=["core", "heavy_+", "dev_+", "all"], default="core")
-#         # parser.add_argument("--branch", type=str, default="phase_1_es")
-#         parser.add_argument("--db", choices=["mongo_db"], default="mongo_db")
-#         parser.add_argument("--preview", type=bool, default=True)
-#         parser.add_argument("--neigh", type=int, default=5)
-#         parser.add_argument("--qpid", type=int, default=None)
-#         parser.add_argument("--msg", "-m", choices=["", "auto", "tmp"], 
-#                             default="auto")
-#                             # help="Commit message for git push",
-#                             # default=f"Auto-commit: Several minor improvements, no major change ({datetime.now().isoformat(timespec='seconds')}" )
-        
-#         args, unknown = parser.parse_known_args()
-
-#         if unknown:
-#             print(f"[INFO] Ignoring unknown CLI arguments: {unknown}")
-    
-#     return args
 
 
 def get_latest_training_folder(root):

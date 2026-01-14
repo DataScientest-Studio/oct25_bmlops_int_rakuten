@@ -8,5 +8,4 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY fastapi/ /app/
 
-# aktivieren, wenn Dateien für APIs fertig sind bzw. anpassen
-CMD ["uvicorn", "etl_trigger:app", "--host", "0.0.0.0", "--port", "8001", "--log-level", "debug"]    
+CMD ["uvicorn", "etl_trigger:app", "--host", "0.0.0.0", "--port", "8001"]    

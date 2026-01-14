@@ -1,15 +1,16 @@
 ## data_handling.py
 # imports
-import os
 import time
 import numpy as np
 import pandas as pd
 from pymongo import UpdateOne
-from datetime import datetime
 
 from . import database_helper as dbh
 
-### 
+# ------------------
+# helper functions
+# ------------------
+
 def list_products(df):
     prod_list = df["product_id"].values().copy()
     return prod_list
@@ -51,26 +52,29 @@ def draw_samples(id_list, samp_size, coll_name=None):
     else:
         print(f"Start creating {samp_size} subgroups from file")
 
-    # configuration + loading
+    # configuration + loading db collection
     seed = random_seed_numpy()
     
     collection = dbh.load_collection(coll_name)
 
+    # draw samples
     samples = np.random.choice(id_list, size=samp_size, replace=False)
 
+    # update records in db
     records = []
     for pid, group in zip(id_list, samples): 
         records.append(UpdateOne(
             {"productid": pid},
             {"$set": {"sample": "Yes", 
                       "sample_seed (np)": seed},
-            "$currentDate": {"lastModified": True }}
+            "$currentDate": {"lastModified": True}}
         ))
 
     results = collection.bulk_write(records, ordered=False)      # prefer 'bulk_write' for multiple updates (> 85k records)
     print("Finished uploading 'SAMPLE' assignment.")
     print(f"Matched:\t{results.matched_count}")
     print(f"Modified:\t{results.modified_count}")
+
 
 def random_seed_numpy():
     seed = int(time.time()) % 2**32               # 'randomly' generated seed
@@ -80,14 +84,9 @@ def random_seed_numpy():
 
 
 def check_latest_products(df_dict, coll_name, days=30):
-    # load MongoDB
+    # load MongoDB collection
     _, _, coll_dict = dbh.setup_mongodb()
     collection = coll_dict.get(coll_name)
-
-    # name_collection = None
-    # for key, value in coll_dict.items():
-    #     if key == coll_name:
-    #         name_collection = value
     
     update_text = None
     update_image = None
@@ -100,17 +99,22 @@ def check_latest_products(df_dict, coll_name, days=30):
         print(f"⚠️ No collection '{coll_name}' found in db")
         return None
 
+    # obtain existing upload times from db
     df_db = dbh.load_cursor(coll_name, cols_needed)
 
     if df_db is None:
         return {"txt_update": "all", 
                 "img_update": "all"}
 
+    # convert upload times to datetime
     for col in ["upload_time (image)", "upload_time (text)"]:
         if col in df_db.columns:
             df_db[col] = pd.to_datetime(df_db[col], errors='coerce')
-        
+    
+    # determine cutoff date
     cutoff = pd.Timestamp.now() - pd.Timedelta(days=days)
+
+    # filter outdated products
     update_image = {}
     update_text = {}
 
