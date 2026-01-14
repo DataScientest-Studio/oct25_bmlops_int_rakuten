@@ -44,17 +44,14 @@ The project deliberately emphasizes **model interpretability, reproducibility, a
 │   ├── dags							   — definition of pipelines incl trigger
 │   └── logs							   — log files from airflow on pipeline execution
 │       ├── dag_process_manager	   — general dashboard configurations as yaml file
-│       └── scheduler				   —  
+│       └── scheduler				   —  logs showing how Airflow plans and executes tasks
 ├── data
 │   ├── data_input						— folder containing new / incoming data
 │   ├── data_lake							— folder containing pre-checked data used in ETL pipeline 
-│   └── data_done							— folder containing data after processed in ETL pipeline 
+│   └── data_done							— folder containing data after processed in ETL pipeline
+│   └── models							  — folder containing artefacts and results for MLflow
 ├── api								      — API deployment
 ├── logs								      — log files from running 'src' or 'script' files
-├── mlflow								   — experiment tracking
-│   ├── artifacts						   —
-│   └── data							   —
-│       └── artifacts				   —
 ├── monitoring							   — monitoring of infrastructure and application (= API)
 │   ├── grafana							— visualising monitoring data as dashboards
 │   │   ├── dashboards					— configurations of customized dashboard as json file
@@ -208,7 +205,7 @@ pip install -r requirements-dev.txt
 wsl
 
 # (2) create a common docker-network
-docker network create mlops-net
+docker network create rakuten_network
 
 # (3) build the image for training with knn
 #note: to ensure that the results are stored locally, you have to change the mounted volumes in the docker-compose.ml.yaml-file (lines 28 and 29 as well as line 52)
