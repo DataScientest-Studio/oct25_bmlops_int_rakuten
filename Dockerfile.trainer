@@ -1,0 +1,38 @@
+# Dockerfile for knn_trainer
+FROM python:3.10-slim
+
+# system packages for Build & Git
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+ENV PATH="/root/.local/bin:$PATH"
+RUN pip install --upgrade pip
+
+# ---- basis MLOps packages ----
+RUN pip install --no-cache-dir \
+    numpy>=1.26 \
+    pandas>=2.3.3 \
+    tqdm>=4.67.1 \
+    click>=8.3.1 \
+    pymongo \
+    beautifulsoup4 \
+    python-dateutil \
+    pytz \
+    psutil \
+    lxml>=5.0 \
+    Pillow>=10.0 \
+    simplejson \
+    python-dotenv>=0.9.9 \
+    mlflow>=3.6.0 \
+    scikit-learn>=1.7.2 \
+    scipy>=1.10
+
+
+COPY . .
+
+
+CMD ["python", "src/knn_mlflow.py"]

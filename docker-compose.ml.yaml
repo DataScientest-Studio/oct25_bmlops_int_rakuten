@@ -1,40 +1,57 @@
 services:
-  mlflow-postgres:
-    image: postgres:13
-    container_name: mlflow-postgres
-    environment:
-      POSTGRES_USER: ${MLFLOW_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${MLFLOW_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${MLFLOW_POSTGRES_DB}
+  mongo:
+    image: mongo:4.4   
+    container_name: mongo
+    restart: no
+    networks:
+      - rakuten_network
     ports:
-      - "5433:5432"
+      - "27017:27017"
     volumes:
-      - mlflow-postgres-db-volume:/var/lib/postgresql/data
-    restart: always
+      - mongo_data:/data/db
 
   mlflow:
-    build:
-      context: .
-      dockerfile: mlflow/Dockerfile
+    image: ghcr.io/mlflow/mlflow:v3.7.0
     container_name: mlflow
-    depends_on:
-      - mlflow-postgres
+    restart: no
     ports:
       - "5000:5000"
-    environment:
-      MLFLOW_TRACKING_URI: http://mlflow:5000
-      BACKEND_STORE_URI: postgresql://${MLFLOW_POSTGRES_USER}:${MLFLOW_POSTGRES_PASSWORD}@mlflow-postgres:5432/${MLFLOW_POSTGRES_DB}
-      ARTIFACT_ROOT: /mlflow/artifacts
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri sqlite:///mlflow.db
+      --default-artifact-root /mlruns
+      --allowed-hosts mlflow,mlflow:5000,localhost:5000,127.0.0.1
+      --cors-allowed-origins "*"
     volumes:
-      - ./mlflow/artifacts:/mlflow/artifacts
-      - ./mlflow/data:/mlflow
-    restart: unless-stopped
+      - /mnt/c/Users/User/Desktop/Final_Test/data:/app/data
+    networks:
+      - rakuten_network
+
+  knn_trainer:
+    build:
+      context: .
+      dockerfile: Dockerfile.trainer
+    container_name: knn_trainer
+    restart: no
+    networks:
+      - rakuten_network
+    depends_on:
+      - mongo
+      - mlflow
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: ${MONGO_URI}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    ports:
+      - "6000:6000"
+    volumes:
+      - /mnt/c/Users/User/Desktop/Final_Test/data:/app/data
 
 volumes:
-  mlflow-postgres-db-volume:
-
-
+  mongo_data:
 networks:
-  default:
-    driver: bridge
-    name: rakuten_network
+  rakuten_network:
+    external: true

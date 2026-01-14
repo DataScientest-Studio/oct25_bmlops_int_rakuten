@@ -198,3 +198,65 @@ async def metrics():
     Expose Prometheus metrics.
     """
     return Response(content=generate_latest(registry), media_type="text/plain")
+
+@router.post("/trigger")
+def trigger_etl():
+    """
+    Triggers the ETL Airflow DAG via the Airflow REST API.
+
+    Returns:
+    - status: confirmation message
+    - dag_run_id: unique ID of the triggered DAG run
+    """
+    start_time = time.time()
+    status_code = "200"
+
+    try:
+        # Create a unique DAG run ID
+        dag_run_id = f"api_trigger_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+        # Trigger Airflow DAG
+        response = requests.post(
+            f"{AIRFLOW_URL}/dags/{DAG_ID}/dagRuns",
+            auth=("airflow", "airflow"),
+            json={
+                "dag_run_id": dag_run_id,
+                "conf": {"source": "knn-api"}
+            },
+            timeout=10
+        )
+
+        # Handle Airflow errors
+        if response.status_code not in (200, 201):
+            raise HTTPException(status_code=500, detail=response.text)
+
+        # Successful trigger
+        return {
+            "status": "Pipeline triggered",
+            "dag_run_id": dag_run_id
+        }
+
+    # Log and propagate errors
+    except Exception as e:
+        status_code = "500"
+        logger.error(e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+    finally:
+        # Record request duration
+        duration = time.time() - start_time
+        api_request_duration_seconds.labels(
+            "/etl/trigger", "POST", status_code
+        ).observe(duration)
+
+        api_request_total.labels(
+            "/etl/trigger", "POST", status_code
+        ).inc()
+
+# Prometheus Metrics Endpoint
+@router.get("/metrics")
+def metrics():
+    """
+    Exposes Prometheus metrics for scraping.
+    """
+    return Response(generate_latest(), media_type="text/plain")

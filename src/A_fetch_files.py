@@ -1,47 +1,46 @@
-## 
 # imports
 from pathlib import Path
-import utils.setup_helper as sh 
 from utils.settings import session
 import utils.file_helper as fh 
 
 def fetch_files(src_path=None, dst_path=None, file_type=None):
+    """
+    Fetches files from a source folder and moves them to a destination folder.
+
+    Parameters:
+    - src_path: path to the folder containing input files (data_input)
+    - dst_path: path to the folder where files should be moved (data_lake)
+    - file_type: list of file extensions to filter, e.g., ['.csv', '.zip']
+
+    Returns:
+    - List of moved file paths (as strings)
+    """
+
+    # Check that both source and destination paths are provided
     if not src_path or not dst_path:
-        # # load env variables from .env and .env.session
-        # sh.load_env_vars()
-
-        # # load paths from .env
-        # sh.get_paths()
-        # # print("[DEBUG] ROOT loaded =", session.root)
-        # # ROOT = Path(session.root)
-        # DATA = Path(session.data)
-
-        # INPUT = DATA / "data_input"
-        # INPUT.mkdir(parents=True, exist_ok=True) 
-
-        # path = INPUT
         print("At least one file path is not given.")
 
+    # If file_type not provided, default to CSV and ZIP files
     if not file_type:
         file_type = [".csv", 
                     ".zip",
-                     # ".json"
                      ]
-
+        
+    # Convert src_path to Path object for easier path operations
     folder = Path(src_path)
 
-    # print(f"[DEBUG] src_path ({src_path}); dst_path ({dst_path})")
+    # List all files in source folder with matching extensions
     files = [str(f) for f in folder.iterdir() \
              if f.suffix.lower() in file_type]
     
+    # Return empty list if no files found
     if not files:
-        # print("No files found")
+        print("No files found")
         return []
     
+    # Move files to destination folder and store new paths
     files_new = []
     for f in files:
-        # check for columns
-        # to be added
         f_moved = fh.move_file(f, Path(dst_path))
         files_new.append(str(f_moved))
 

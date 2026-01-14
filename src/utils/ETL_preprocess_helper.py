@@ -32,7 +32,7 @@ def extract_product_id(filename):
 
 def extract_metadata(image_dir, output_name):
     records = []
-    for img_file in image_dir.glob("*.jpg"):
+    for img_file in image_dir.rglob("*.jpg"):
         try:
             with Image.open(img_file) as img:
                 width, height = img.size
@@ -175,9 +175,16 @@ def data_cleaning(df_dict):
     
     return df_cleaned
 
-
-
 def filter_rename_columns(df: pd.DataFrame, cols_allowed, rename_dict=None):
+    if rename_dict:
+        df = df.rename(columns=rename_dict)
+    
+    allowed = [col for col in df.columns if col in cols_allowed]
+    data = df[allowed].copy()
+
+    return data
+
+def filter_rename_columns2(df: pd.DataFrame, cols_allowed, rename_dict=None):
 
     allowed = [col for col in df.columns if col in cols_allowed]
 

@@ -30,6 +30,27 @@ def load_cursor(coll_name, cols_needed):
 
     return pd.DataFrame(docs)
 
+def load_cursor2(coll_name, cols_needed):
+    
+    collection = load_collection(coll_name)
+    if collection is None:
+        return pd.DataFrame()
+    
+    if not cols_needed:
+        projection = {"_id": 0} 
+    else:
+        projection = {"_id": 0}   
+        for col in cols_needed:
+            projection[col] = 1
+
+    cursor = collection.find({}, projection) 
+    docs = list(cursor)
+
+    if not docs:
+        print("No documents found in MongoDB.")
+        return pd.DataFrame()
+
+    return pd.DataFrame(docs)
 
 def setup_mongodb(db_name: str = None, 
                   collection_name: str = None, 
@@ -119,9 +140,30 @@ def load_collection(coll_name):
     
     return collection
 
-
-
 def upload_embeds(df, coll_name):
+    print("Starting upload of 'text_embed'")
+    df["text_embed"] = df["text_embed"].apply(lambda x: x.tolist() if hasattr(x, "tolist") else x)
+    records = df[["productid", "text_embed"]].to_dict(orient="records")
+    ops = []
+
+    now_emb = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now_emb2 = datetime.now()
+
+    for record in records:
+        ops.append(UpdateOne(
+            {"productid": record["productid"]},
+            {"$set": {"text_embed": record["text_embed"],
+                      "upload_time (image)": now_emb,
+                      "upload_time (text)": now_emb2},
+            "$currentDate": {"lastModified": True }}
+        ))
+    
+    collection = load_collection(coll_name)
+    results = collection.bulk_write(ops, ordered=False)      # prefer 'bulk_write' for multiple updates (> 85k records)
+    print("Finished upload of 'text_embed'")
+    print(f"Modified count:\t{results.modified_count} entries")
+
+def upload_embeds2(df, coll_name):
     print("Starting upload of 'text_embed'")
     records = df[["productid", "embed_text"]].to_dict(orient="records")
     ops = []

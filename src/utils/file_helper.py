@@ -111,10 +111,8 @@ def save_pickle(file, path, folder=None):
 
 
 def save_pickle2(obj, file_path):
-    # Ordner extrahieren
     folder = os.path.dirname(file_path)
 
-    # Ordner erstellen falls nötig
     if folder and not os.path.exists(folder):
         os.makedirs(folder, exist_ok=True)
 
@@ -148,7 +146,29 @@ def merge_dfs(dict_df: dict):
     print(f"HEAD:\n{df_merged.head(5)}\n")
 
     return df_merged
+
+def merge_dfs2(dict_df: dict):
+    """
+    Docstring for merge_dfs
     
+    :param dict_df: Description
+    """
+    ## merge data frames
+    dfs = list(dict_df.values()) 
+    
+    df_merged = dfs[0]
+    if len(dfs) > 1:
+        for df in dfs[1:]:
+            df_merged = df_merged.merge(df, 
+                                        on='Unnamed: 0',
+                                        how='outer')
+
+    sh.log_header(f"CHECK MERGED DF")
+    print("SHAPE:\t", df_merged.shape)
+    print("INFO\n", sh.info_as_string(df_merged))
+    print(f"HEAD:\n{df_merged.head(5)}\n")
+
+    return df_merged
 
 def column_check(df, cols=None):
     if not cols:

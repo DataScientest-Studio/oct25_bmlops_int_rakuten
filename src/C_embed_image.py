@@ -1,139 +1,167 @@
-import tensorflow as tf
-import os
-from pathlib import Path
-from PIL import Image
-import pandas as pd
-import re
-from pathlib import Path
-import numpy as np
-from tqdm import tqdm
-from tensorflow.keras.applications import MobileNetV2
-from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
-import gc
-from pprint import pprint
-from utils.settings import session
-from utils.setup_helper import load_env_vars, get_paths
-from utils.db_helper import setup_mongodb
-from utils.ETL_preprocess_helper import get_mobilenet_embeddings
 from pymongo import UpdateOne
+from pprint import pprint
 from datetime import datetime
 
-
 def image_embed():
-    # load env variables from .env and .env.session
-    # load_env_vars()
+    """
+    Generates image embeddings using OpenAI CLIP model and stores them in MongoDB.
 
-ROOT = Path(os.getenv("LOCAL_ROOT"))
-DATA = Path(os.getenv("LOCAL_DATA"))
-VENV = Path(os.getenv("LOCAL_VENV"))
+    Steps:
+    1. Load latest *_metadata_images.csv containing image paths.
+    2. Normalize column names and validate required fields.
+    3. Load CLIP model and processor.
+    4. Calculate embeddings for all images.
+    5. Save embeddings to CSV.
+    6. Upload embeddings to MongoDB collection.
+    """
+    import os
+    from pathlib import Path
+    import pandas as pd
+    import numpy as np
+    from tqdm import tqdm
+    from PIL import Image
+    import torch
+    from transformers import CLIPProcessor, CLIPModel
 
-# ROOT, DATA, VENV, _ = load_env_vars()
+    from utils.database_helper import setup_mongodb
 
-IMAGES = DATA / "unzipped_images" / "images"
-IMAGES.mkdir(parents=True, exist_ok=True)
+    # Paths / Environment
+    DATA = Path(os.getenv("LOCAL_DATA"))
 
-TEST_IMAGES = IMAGES / "test_image"
-TEST_IMAGES.mkdir(parents=True, exist_ok=True)
+    DATA_DONE = DATA / "data_done"
+    DATA_PROCESSED = DATA / "data_processed"
+    DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
 
-TRAIN_IMAGES = IMAGES / "train_image"
-TRAIN_IMAGES.mkdir(parents=True, exist_ok=True)
+    # Load latest metadata_images.csv
+    metadata_files = list(DATA_DONE.glob("*_metadata_images.csv"))
+    if not metadata_files:
+        raise FileNotFoundError("No *_metadata_images.csv found in data_done")
 
-DATA_PROCESSED = DATA / "data_processed"
-DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
+    # Pick latest file based on modification time
+    latest_metadata_file = max(metadata_files, key=lambda p: p.stat().st_mtime)
+    print(f"Using metadata file: {latest_metadata_file}")
 
-DATA_LAKE = DATA / "data_lake"
-DATA_LAKE.mkdir(parents=True, exist_ok=True)
+    metadata_df = pd.read_csv(latest_metadata_file)
 
-metadata_path_train = DATA_LAKE / "metadata_train.csv"
-metadata_df_train = pd.read_csv(metadata_path_train)
+    # Normalize column names
+    if "product_id" in metadata_df.columns:
+        metadata_df.rename(columns={"product_id": "productid"}, inplace=True)
 
-metadata_path_test = DATA_LAKE / "metadata_test.csv"
-metadata_df_test = pd.read_csv(metadata_path_test)
+    # Ensure required columns exist
+    required_cols = {"productid", "path"}
+    missing = required_cols - set(metadata_df.columns)
+    if missing:
+        raise ValueError(f"Missing columns in metadata: {missing}")
 
-base_model = MobileNetV2(weights="imagenet", include_top=False, pooling="avg")
-preprocess = preprocess_input
+    img_paths = metadata_df["path"].astype(str).tolist()
 
-img_paths_train = [DATA / p for p in metadata_df_train['path'].values]
-img_paths_test = [DATA / p for p in metadata_df_test['path'].values]
+    # CLIP Model & Processor
+    device = torch.device("cpu")
+    model_name = "openai/clip-vit-base-patch32"
 
-embeddings_train = []
-for i in tqdm(range(0, len(img_paths_train), 16), desc="Calculate Embeddings"):
-    batch_paths_train = img_paths_train[i:i+16]
-    batch_embeddings_train = get_mobilenet_embeddings(batch_paths_train, batch_size=16)
-    embeddings_train.extend(batch_embeddings_train)
+    # Load pretrained CLIP model and processor
+    model = CLIPModel.from_pretrained(model_name)
+    processor = CLIPProcessor.from_pretrained(model_name)
 
-valid_idx_train = [i for i, e in enumerate(embeddings_train) if e is not None]
-df_emb_train = metadata_df_train.iloc[valid_idx_train].copy()
-df_emb_train['embedding'] = [embeddings_train[i] for i in valid_idx_train]
+    model.eval()
+    model.to(device)
 
-print(f"Calculated Embeddings: {len(df_emb_train)} / {len(metadata_df_train)}")
+    # Embedding Function
+    def get_embeddings(image_paths, batch_size=16):
+        """
+        Computes normalized CLIP embeddings for a list of image paths.
 
-# convert Embeddings into strings 
-df_emb_train['embedding_str'] = df_emb_train['embedding'].apply(
-    lambda x: ",".join(map(str, x)) if x is not None else None
-)
+        - Skips images that cannot be loaded.
+        - Returns list of embeddings, None for failed images.
+        """
+        embeddings = []
 
-# store DataFrame 
-df_emb_train.to_csv(DATA_PROCESSED / "df_train_with_embeddings.csv", index=False)
-print("df_train_with_embeddings.csv saved.")
+        for i in tqdm(range(0, len(image_paths), batch_size), desc="Calculate Embeddings"):
+            batch_paths = image_paths[i:i + batch_size]
+            images = []
 
-embeddings_test = []
-for i in tqdm(range(0, len(img_paths_test), 16), desc="Calculate Embeddings"):
-    batch_paths_test = img_paths_test[i:i+16]
-    batch_embeddings_test = get_mobilenet_embeddings(batch_paths_test, batch_size=16)
-    embeddings_test.extend(batch_embeddings_test)
+            # Load images
+            for p in batch_paths:
+                try:
+                    img = Image.open(p).convert("RGB")
+                    images.append(img)
+                except Exception as e:
+                    print(f"Error loading {p}: {e}")
+                    images.append(None)
+            # Only keep valid images for embedding
+            valid_idx = [i for i, img in enumerate(images) if img is not None]
+            if not valid_idx:
+                embeddings.extend([None] * len(batch_paths))
+                continue
 
-valid_idx_test = [i for i, e in enumerate(embeddings_test) if e is not None]
-df_emb_test = metadata_df_test.iloc[valid_idx_test].copy()
-df_emb_test['embedding'] = [embeddings_test[i] for i in valid_idx_test]
+            valid_images = [images[i] for i in valid_idx]
 
-print(f"Calculated Embeddings: {len(df_emb_test)} / {len(metadata_df_test)}")
+            # Preprocess images and move tensors to device
+            inputs = processor(images=valid_images, return_tensors="pt")
+            inputs = {k: v.to(device) for k, v in inputs.items()}
 
-# convert Embeddings into strings 
-df_emb_test['embedding_img'] = df_emb_test['embedding'].apply(
-    lambda x: ",".join(map(str, x)) if x is not None else None
-)
+            # Compute embeddings
+            with torch.no_grad():
+                batch_emb = model.get_image_features(**inputs).cpu().numpy()
+            
+            # Normalize embeddings
+            batch_emb = batch_emb / np.linalg.norm(batch_emb, axis=1, keepdims=True)
 
-# store DataFrame 
-df_emb_test.to_csv(DATA_PROCESSED / "df_test_with_embeddings.csv", index=False)
-print("df_test_with_embeddings.csv saved.")
+            # Map embeddings back to original batch
+            emb_iter = iter(batch_emb)
+            for img in images:
+                embeddings.append(next(emb_iter) if img is not None else None)
+
+        return embeddings
 
 
+    # Calculate embeddings
+    embeddings = get_embeddings(img_paths)
+    
+    # Keep only rows with valid embeddings
+    valid_idx = [i for i, e in enumerate(embeddings) if e is not None]
+    df_emb = metadata_df.iloc[valid_idx].copy()
+    df_emb["embedding"] = [embeddings[i] for i in valid_idx]
+
+    # Convert embeddings to comma-separated string for MongoDB storage
+    df_emb["embedding_img"] = df_emb["embedding"].apply(
+        lambda x: ",".join(map(str, x))
+    )
+
+    # Save embeddings CSV
+    out_file = DATA_PROCESSED / "df_images_with_embeddings.csv"
+    df_emb.to_csv(out_file, index=False)
+    print(f"{out_file.name} saved.")
+
+ 
+    # MongoDB Upload
+    db, db_name, coll_dict = setup_mongodb()
+    collection = coll_dict["products"]
+
+    upload_embeddings(df_emb, collection)
+
+    print("Total documents:", collection.count_documents({}))
+    pprint(collection.find_one())
 
 def upload_embeddings(df, collection, embedding_col="embedding_img"):
     """
-    Upload embeddings to MongoDB.
-    df: DataFrame containing at least 'product_id' and embedding_col
-    collection: pymongo collection
-    embedding_col: column in df to upload ('embedding_str' or 'embedding')
+    Upload embeddings to MongoDB using bulk_update.
+
+    - df: DataFrame containing 'productid' and embeddings
+    - collection: pymongo collection object
+    - embedding_col: column name in df to upload
     """
-    # Erstelle Records für MongoDB
     records = df[["productid", embedding_col]].to_dict(orient="records")
-
     ops = []
-    now = datetime.now()
 
-    for record in records:
+    for r in records:
         ops.append(UpdateOne(
-            {"productid": str(record["productid"])},           # Match-Filter
-            {"$set": {embedding_col: record[embedding_col]},
-             "$currentDate": {"lastModified": True}},     # Aktualisiere lastModified
-            upsert=False                                  # Falls Produkt noch nicht existiert
+            {"productid": float(r["productid"])},
+            {"$set": {embedding_col: r[embedding_col]},
+             "$currentDate": {"lastModified": True}},
+            upsert=False
         ))
-    
+
     if ops:
-        results = collection.bulk_write(ops)
-        print(f"Modified/Inserted count: {results.modified_count + len(results.upserted_ids)}")
-
-db, db_name, coll_dict = setup_mongodb()
-collection = coll_dict["products"]  
-
-upload_embeddings(df_emb_train, collection, embedding_col="embedding_img")
-upload_embeddings(df_emb_test, collection, embedding_col="embedding_img")
-
-count = collection.count_documents({})
-print("Total documents:", count)
-
-if count:
-    print("\nExample document:")
-    pprint(collection.find_one())
+        res = collection.bulk_write(ops)
+        print(f"Updated documents: {res.modified_count}")

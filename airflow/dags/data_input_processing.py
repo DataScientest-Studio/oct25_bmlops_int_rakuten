@@ -1,15 +1,9 @@
-## data_input_processing.py
-# imports
-# import os
 import sys
 sys.path.insert(0, "/opt/airflow/src")
 sys.path.insert(0, "/opt/airflow/src/utils")
 
 from pathlib import Path
 from datetime import datetime, timedelta
-# from airflow import DAG
-# from airflow.sensors.filesystem import FilePatternSensor
-# from airflow.operators.python import PythonOperator
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowSkipException
 from airflow.sensors.python import PythonSensor
@@ -19,6 +13,7 @@ from A_new_file_check import new_file_check
 from B_ETL_text_general import text_general_etl
 from B_ETL_image import image_etl
 from C_embed_text import text_embed
+from C_embed_image import image_embed
 from utils import file_helper as fh
 # from C_embed_image import image_embed
 
@@ -56,7 +51,7 @@ def _any_file_exists(**context):
 
 def data_processing_pipeline():
 
-    # sensor checks for new files 
+    # sensor checks for new files (doesnt work properly)
     wait_for_file = PythonSensor(
             task_id="wait_for_file",
             python_callable = _any_file_exists, 
@@ -70,6 +65,7 @@ def data_processing_pipeline():
     def run_fetch_files():
         files = fetch_files(src_path=DATA_INPUT, 
                             dst_path=DATA_LAKE)
+        # The skip-exception doesnt work properly, so be sure you have files in the input-folder
         if not files:
             raise AirflowSkipException("During 'run_fetch_files', no files found")
 
@@ -93,11 +89,13 @@ def data_processing_pipeline():
     # task 3-B: ETL image  
     @task
     def run_image_etl(check_result):
-        result = image_etl(src_folder=DATA_LAKE, 
+        result = image_etl(img_path=DATA_LAKE, 
                             dst_folder=DATA_DONE,
                             product_dict=check_result)
-    
-        if result.status is fh.ExtractStatus.SKIPPED:
+        
+        status = result.get("status", "unknown")
+
+        if status == "skipped":
             print("Skipped 'file unzipping' – destination folder ist not empty")
         
         else: 
@@ -107,11 +105,12 @@ def data_processing_pipeline():
     @task
     def run_text_embed(_):
         return text_embed()
+        
 
-    # task 4-B: create embeddings from text
-    # @task
-    # def run_image_embed(_):
-    #     return image_embed()
+    @task
+    def run_image_embed(_):
+        return image_embed()
+        
 
     # define dependencies
     fetched = run_fetch_files()
@@ -121,9 +120,11 @@ def data_processing_pipeline():
     etl_image = run_image_etl(check_result)
     
     run_text_embed(etl_text)
-    # run_image_embed(etl_image)
+    run_image_embed(etl_image)
     
     wait_for_file >> fetched
+
+
 
 pipeline = data_processing_pipeline()
     

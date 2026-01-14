@@ -1,12 +1,13 @@
 services:
-  fastapi:
+  knn_api:
     build:
       context: .
-      dockerfile: fastapi/Dockerfile
-    container_name: fastapi
+      dockerfile: api/Dockerfile
+    container_name: knn_api
     ports:
       - "8001:8001"
-    restart: always
+    volumes:
+      - /mnt/c/Users/User/Desktop/MyMLOps/data:/app/data
     networks:
       - rakuten_network
 
