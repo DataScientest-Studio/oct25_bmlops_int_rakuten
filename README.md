@@ -237,6 +237,7 @@ docker compose up -d postgres redis airflow-webserver airflow-scheduler airflow-
 wsl
 
 # (2) build and start the API-container
+# note that you have to change the mounted volume in docker-compose.api.yaml (line 10)
 docker compose -f docker-compose.api.yaml up -d
 -> The API-UI is now available on http://localhost:8001/docs
 
