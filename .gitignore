@@ -108,8 +108,7 @@ _backup/pyproject copy.toml
 # files needed for GitActions (CI/CD)
 !**/ci.env   
 
-
-git config --get-all user.name [0ms]
+uv.lock
 streamlit/src/codes/setup_ami.sh
 streamlit/src/codes/setup_code_server.sh
 streamlit/src/codes/ssm_connect.sh
