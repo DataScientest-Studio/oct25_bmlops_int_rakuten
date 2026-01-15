@@ -86,7 +86,7 @@ def show():
         🔜 Better overview: use 'Portainer'or 'ContainerTools' (VSCode extension, see below)
         - Kubernetes   
         🔴 not yet started   
-        - Terraform (i.e. IaC wrt EC2, subnets, security groups, routing tables, NAT-/IGW,...)   
+        - Terraform and/or Helm (i.e. IaC wrt infrastructure, configurations,...)   
         🔴 not yet started
         - Amazon Machine Image (AMI):   
         🟡 MLOps base image available, additional AMIs possible as backup or when production ready (--> autoscaling)   
